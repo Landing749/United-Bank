@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>United Bank — Trusted Banking</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+<style>
+
+/* ─── Reset & Root ─────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy:        #070e1a;
+  --navy-2:      #0d1a2e;
+  --navy-3:      #152038;
+  --navy-4:      #1d2d4a;
+  --navy-5:      #243357;
+  --gold:        #c9a84c;
+  --gold-lt:     #e2c97e;
+  --gold-dk:     #a07828;
+  --emerald:     #0d9e6e;
+  --emerald-lt:  #12c489;
+  --red:         #e05252;
+  --white:       #ffffff;
+  --white-80:    rgba(255,255,255,0.80);
+  --white-60:    rgba(255,255,255,0.60);
+  --white-40:    rgba(255,255,255,0.40);
+  --white-20:    rgba(255,255,255,0.20);
+  --white-10:    rgba(255,255,255,0.10);
+  --white-06:    rgba(255,255,255,0.06);
+  --white-03:    rgba(255,255,255,0.03);
+  --gold-10:     rgba(201,168,76,0.10);
+  --gold-20:     rgba(201,168,76,0.20);
+  --gold-30:     rgba(201,168,76,0.30);
+  --shadow-lg:   0 32px 80px rgba(0,0,0,0.6);
+  --shadow-md:   0 8px 32px rgba(0,0,0,0.4);
+  --radius:      16px;
+  --radius-sm:   10px;
+  --sidebar-w:   260px;
+  --header-h:    68px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--navy-5); border-radius: 3px; }
+
+/* ─── Navbar ────────────────────────────────────── */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(7,14,26,0.92);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--white-10);
+  display: flex;
+  align-items: center;
+  z-index: 900;
+  padding: 0 clamp(20px, 4vw, 56px);
+  transition: border-color .3s;
+}
+.navbar.scrolled { border-color: var(--gold-10); }
+
+.nav-inner {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nav-logo-mark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--navy);
+  letter-spacing: 0;
+  box-shadow: 0 0 20px var(--gold-20);
+}
+.nav-logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: .08em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.nav-link {
+  color: var(--white-60);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  transition: color .2s;
+}
+.nav-link:hover { color: var(--white); }
+
+.btn-nav-login {
+  background: transparent;
+  border: 1px solid var(--gold-20);
+  color: var(--gold-lt);
+  padding: 9px 24px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: all .25s;
+  white-space: nowrap;
+}
+.btn-nav-login:hover {
+  background: var(--gold-10);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  margin-left: auto;
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--white-80);
+  border-radius: 2px;
+  transition: all .3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: var(--header-h); left: 0; right: 0;
+  background: rgba(7,14,26,0.98);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--white-10);
+  padding: 24px clamp(20px,4vw,56px);
+  flex-direction: column;
+  gap: 8px;
+  z-index: 890;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu .nav-link {
+  font-size: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--white-06);
+  color: var(--white-80);
+}
+.mobile-menu .btn-nav-login {
+  margin-top: 8px;
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+}
+
+/* ─── Public Site ───────────────────────────────── */
+#public-site { display: block; }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  padding: calc(var(--header-h) + 60px) clamp(20px,4vw,56px) 80px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 70% at 80% 50%, rgba(13,30,60,0.9) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 10% 20%, rgba(201,168,76,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 90% 80%, rgba(13,158,110,0.06) 0%, transparent 60%);
+}
+/* Subtle grid */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--white-03) 1px, transparent 1px),
+    linear-gradient(90deg, var(--white-03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+
+.hero-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(40px, 6vw, 100px);
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold-10);
+  border: 1px solid var(--gold-20);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--gold-lt);
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--emerald-lt);
+  border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 6vw, 86px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  color: var(--white);
+  margin-bottom: 24px;
+}
+.hero-title em {
+  font-style: normal;
+  background: linear-gradient(120deg, var(--gold), var(--gold-lt));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+  font-size: clamp(15px, 1.6vw, 18px);
+  color: var(--white-60);
+  line-height: 1.9;
+  max-width: 460px;
+  margin-bottom: 40px;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  color: var(--navy);
+  border: none;
+  padding: 14px 34px;
+  border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(201,168,76,0.35);
+}
+.btn-ghost {
+  background: var(--white-06);
+  color: var(--white-80);
+  border: 1px solid var(--white-10);
+  padding: 14px 34px;
+  border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .25s;
+}
+.btn-ghost:hover { background: var(--white-10); color: var(--white); }
+
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 56px;
+  flex-wrap: wrap;
+}
+.hero-stat-divider { width: 1px; background: var(--white-10); }
+.hero-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.hero-stat-lbl {
+  font-size: 12px;
+  color: var(--white-40);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Hero Card Visual */
+.hero-card-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+.hero-card-wrap::before {
+  content: '';
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-card-svg {
+  width: 100%;
+  max-width: 440px;
+  filter: drop-shadow(0 32px 48px rgba(0,0,0,0.6));
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ─── Section Commons ───────────────────────────── */
+.section {
+  padding: clamp(60px, 8vw, 120px) clamp(20px, 4vw, 56px);
+}
+.section-inner { max-width: 1360px; margin: 0 auto; }
+.section-tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.section-sub {
+  color: var(--white-60);
+  font-size: 16px;
+  line-height: 1.8;
+  max-width: 540px;
+}
+
+/* ─── Features ──────────────────────────────────── */
+.features-section { background: var(--navy-2); }
+.features-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(30px, 4vw, 80px);
+  margin-bottom: 64px;
+  align-items: end;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.feat-card {
+  background: var(--white-03);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  transition: all .3s;
+  position: relative;
+  overflow: hidden;
+}
+.feat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold-dk), var(--gold));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .4s;
+}
+.feat-card:hover { background: var(--white-06); border-color: var(--white-10); }
+.feat-card:hover::before { transform: scaleX(1); }
+
+.feat-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--gold-10);
+  border: 1px solid var(--gold-20);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.feat-icon svg { width: 22px; height: 22px; stroke: var(--gold); }
+.feat-name {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: .01em;
+}
+.feat-desc { font-size: 14px; color: var(--white-60); line-height: 1.75; }
+
+/* ─── Services ──────────────────────────────────── */
+.services-section { background: var(--navy); }
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 56px;
+}
+.svc-card {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  transition: border-color .3s;
+}
+.svc-card:hover { border-color: var(--gold-30); }
+.svc-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.svc-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy-5);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.svc-icon svg { width: 20px; height: 20px; stroke: var(--gold-lt); }
+.svc-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--gold-lt);
+}
+.svc-list { list-style: none; }
+.svc-list li {
+  padding: 10px 0 10px 18px;
+  position: relative;
+  color: var(--white-60);
+  font-size: 14px;
+  border-bottom: 1px solid var(--white-06);
+}
+.svc-list li:last-child { border-bottom: none; }
+.svc-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--emerald);
+}
+
+/* ─── CTA ───────────────────────────────────────── */
+.cta-section {
+  background: var(--navy-2);
+  border-top: 1px solid var(--white-06);
+  border-bottom: 1px solid var(--white-06);
+  text-align: center;
+  padding: clamp(60px, 8vw, 120px) clamp(20px, 4vw, 56px);
+}
+.cta-section .section-title { color: var(--white); margin-bottom: 16px; }
+.cta-section p { color: var(--white-60); font-size: 17px; margin-bottom: 36px; }
+
+/* ─── Footer ────────────────────────────────────── */
+.footer {
+  background: var(--navy);
+  border-top: 1px solid var(--white-06);
+  padding: clamp(40px, 6vw, 80px) clamp(20px, 4vw, 56px) 32px;
+}
+.footer-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
+}
+.footer-brand p { color: var(--white-40); font-size: 14px; line-height: 1.8; margin-top: 16px; max-width: 280px; }
+.footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 20px; }
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 12px; }
+.footer-links a { color: var(--white-60); text-decoration: none; font-size: 14px; transition: color .2s; }
+.footer-links a:hover { color: var(--gold); }
+.footer-bottom {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--white-06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-bottom p { color: var(--white-40); font-size: 13px; }
+
+/* ─── LOGIN MODAL ───────────────────────────────── */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(16px);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.active { display: flex; }
+
+.login-modal {
+  background: var(--navy-2);
+  border: 1px solid var(--white-10);
+  border-radius: 24px;
+  padding: clamp(32px, 5vw, 56px);
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 60px 120px rgba(0,0,0,0.8), 0 0 80px var(--gold-10);
+  animation: slideUp .3s ease-out;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: var(--white-06);
+  border: none;
+  color: var(--white-60);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  line-height: 1;
+}
+.modal-close-btn:hover { background: rgba(224,82,82,0.2); color: var(--red); }
+
+.modal-logo {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--navy);
+  box-shadow: 0 8px 24px var(--gold-30);
+}
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.modal-sub {
+  text-align: center;
+  color: var(--white-40);
+  font-size: 13px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+
+.form-field { margin-bottom: 18px; }
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--white-40);
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.form-input {
+  width: 100%;
+  background: var(--navy);
+  border: 1px solid var(--white-10);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  color: var(--white);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  outline: none;
+  transition: all .2s;
+}
+.form-input::placeholder { color: var(--white-20); }
+.form-input:focus { border-color: var(--gold-20); box-shadow: 0 0 0 3px var(--gold-10); }
+
+.form-error {
+  color: var(--red);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 10px 14px;
+  background: rgba(224,82,82,0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(224,82,82,0.2);
+  display: none;
+  margin-bottom: 16px;
+}
+
+.btn-full {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  color: var(--navy);
+  border: none;
+  padding: 15px;
+  border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 4px 20px var(--gold-20);
+}
+.btn-full:hover { opacity: .9; transform: translateY(-1px); }
+.btn-full:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ─── DASHBOARD ─────────────────────────────────── */
+#dashboard {
+  display: none;
+  min-height: 100vh;
+  background: var(--navy);
+  padding-top: var(--header-h);
+}
+#dashboard.active { display: block; }
+
+/* Dashboard Header Bar */
+.dash-topbar {
+  background: var(--navy-2);
+  border-bottom: 1px solid var(--white-06);
+  padding: 0 clamp(16px, 3vw, 40px);
+}
+.dash-topbar-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dash-greeting h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.dash-greeting span { color: var(--gold-lt); }
+.dash-greeting p { font-size: 12px; color: var(--white-40); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+.dash-actions { display: flex; align-items: center; gap: 12px; }
+.dash-badge {
+  background: var(--gold-10);
+  border: 1px solid var(--gold-20);
+  color: var(--gold-lt);
+  padding: 5px 14px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.dash-badge.admin {
+  background: rgba(168,85,247,0.1);
+  border-color: rgba(168,85,247,0.3);
+  color: #c084fc;
+}
+.btn-logout {
+  background: rgba(224,82,82,0.1);
+  border: 1px solid rgba(224,82,82,0.2);
+  color: var(--red);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-logout:hover { background: rgba(224,82,82,0.2); }
+
+/* Dashboard Tabs */
+.dash-tabs {
+  background: var(--navy-2);
+  border-bottom: 1px solid var(--white-06);
+  padding: 0 clamp(16px, 3vw, 40px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.dash-tabs::-webkit-scrollbar { height: 0; }
+.dash-tabs-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--white-40);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-btn svg { width: 15px; height: 15px; opacity: .6; }
+.tab-btn:hover { color: var(--white-80); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn.active svg { opacity: 1; stroke: var(--gold); }
+
+/* Dashboard Body */
+.dash-body {
+  padding: clamp(20px, 3vw, 40px) clamp(16px, 3vw, 40px);
+}
+.dash-body-inner { max-width: 1360px; margin: 0 auto; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── OVERVIEW TAB ──────────────────────────────── */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.stat-card:hover { border-color: var(--white-10); }
+.stat-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--white-40);
+  margin-bottom: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.stat-card-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-card-val.gold { color: var(--gold); }
+.stat-card-val.emerald { color: var(--emerald-lt); }
+.stat-card-val.red { color: var(--red); }
+.stat-card-sub { font-size: 12px; color: var(--white-40); }
+.stat-card-accent {
+  position: absolute;
+  right: 20px; top: 20px;
+  width: 40px; height: 40px;
+  background: var(--white-03);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat-card-accent svg { width: 18px; height: 18px; stroke: var(--white-20); }
+
+.dash-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.dash-box {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+}
+.dash-box-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-box-title span { color: var(--white-40); font-size: 12px; font-weight: 400; font-family: 'JetBrains Mono', monospace; }
+
+/* Transaction Row */
+.tx-list { display: flex; flex-direction: column; gap: 2px; }
+.tx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--white-06);
+  gap: 12px;
+}
+.tx-row:last-child { border-bottom: none; }
+.tx-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--white-06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tx-icon svg { width: 16px; height: 16px; }
+.tx-info { flex: 1; min-width: 0; }
+.tx-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-date { font-size: 12px; color: var(--white-40); font-family: 'JetBrains Mono', monospace; }
+.tx-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tx-amount.credit { color: var(--emerald-lt); }
+.tx-amount.debit { color: var(--red); }
+
+.tx-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--white-40);
+  font-size: 14px;
+}
+
+/* Account info list */
+.info-list { display: flex; flex-direction: column; gap: 0; }
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--white-06);
+  gap: 16px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-key { font-size: 13px; color: var(--white-40); }
+.info-val { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--white-80); text-align: right; }
+.badge-active { background: rgba(13,158,110,0.15); color: var(--emerald-lt); padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+.badge-frozen { background: rgba(120,120,140,0.2); color: #8888aa; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+
+/* ─── MY CARD TAB ───────────────────────────────── */
+.card-tab-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.card-display-wrap {
+  position: relative;
+  perspective: 1000px;
+}
+
+/* The actual card */
+.bank-card {
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1.586;
+  border-radius: 20px;
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all .5s ease;
+  transform-style: preserve-3d;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+  cursor: default;
+}
+.bank-card.active-card {
+  background: linear-gradient(135deg, #1a0a3e 0%, #4b1a80 40%, #a01060 75%, #e0305a 100%);
+}
+.bank-card.frozen-card {
+  background: linear-gradient(135deg, #1c1c2a 0%, #2c2c42 40%, #3a3a55 100%);
+  filter: saturate(0.2);
+}
+
+/* Card shine overlay */
+.bank-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
+  pointer-events: none;
+}
+/* Card pattern */
+.bank-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 300px; height: 300px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+  border: 60px solid rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+
+.card-type-label {
+  position: absolute;
+  top: 22px; left: 28px;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  font-family: 'Syne', sans-serif;
+}
+.card-bank-name {
+  position: absolute;
+  top: 20px; right: 24px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: .05em;
+}
+
+/* EMV chip */
+.card-chip {
+  position: absolute;
+  top: 50px; left: 28px;
+}
+.card-chip svg { width: 44px; height: 34px; }
+
+/* Frozen badge */
+.frozen-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(1px);
+}
+.frozen-label {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 100px;
+  padding: 6px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.frozen-label svg { width: 14px; height: 14px; stroke: rgba(255,255,255,0.5); }
+
+.card-number {
+  position: absolute;
+  bottom: 58px; left: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  letter-spacing: .18em;
+  color: rgba(255,255,255,0.9);
+}
+.card-holder {
+  position: absolute;
+  bottom: 26px; left: 28px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+.card-expiry {
+  position: absolute;
+  bottom: 26px; right: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+
+/* Card details panel */
+.card-details-panel { display: flex; flex-direction: column; gap: 16px; }
+.card-status-banner {
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-status-banner.active {
+  background: rgba(13,158,110,0.12);
+  border: 1px solid rgba(13,158,110,0.25);
+  color: var(--emerald-lt);
+}
+.card-status-banner.frozen {
+  background: rgba(100,100,140,0.12);
+  border: 1px solid rgba(100,100,140,0.25);
+  color: #8888bb;
+}
+.card-status-banner svg { width: 16px; height: 16px; }
+
+.card-info-box {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-info-box .info-row { padding: 14px 20px; }
+
+/* ─── LOANS TAB ─────────────────────────────────── */
+.loans-empty {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 64px;
+  text-align: center;
+}
+.loans-empty svg { width: 48px; height: 48px; stroke: var(--white-20); margin-bottom: 16px; }
+.loans-empty h3 { font-size: 18px; margin-bottom: 8px; }
+.loans-empty p { color: var(--white-40); font-size: 14px; }
+
+.loan-card {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 16px;
+  transition: border-color .2s;
+}
+.loan-card:hover { border-color: var(--white-10); }
+.loan-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.loan-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--white-40); margin-bottom: 4px; }
+.loan-amount { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--gold); }
+.loan-status {
+  padding: 5px 14px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.loan-status.active { background: rgba(13,158,110,0.15); color: var(--emerald-lt); }
+.loan-status.overdue { background: rgba(224,82,82,0.15); color: var(--red); }
+.loan-status.paid { background: var(--white-06); color: var(--white-40); }
+
+.loan-progress-wrap { margin-bottom: 20px; }
+.loan-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--white-40);
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.loan-progress-bar {
+  height: 5px;
+  background: var(--white-06);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.loan-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dk), var(--gold));
+  border-radius: 100px;
+  transition: width .6s ease;
+}
+
+.loan-meta {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.loan-meta-item { font-size: 13px; color: var(--white-40); }
+.loan-meta-item strong { color: var(--white-80); font-family: 'JetBrains Mono', monospace; display: block; font-size: 15px; margin-bottom: 2px; }
+
+/* ─── HISTORY TAB ───────────────────────────────── */
+.history-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  background: var(--white-06);
+  border: 1px solid var(--white-10);
+  color: var(--white-60);
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: .04em;
+}
+.filter-chip:hover { background: var(--white-10); }
+.filter-chip.active { background: var(--gold-10); border-color: var(--gold-20); color: var(--gold-lt); }
+
+.history-table {
+  background: var(--navy-3);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.history-thead {
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 100px;
+  padding: 12px 20px;
+  background: var(--white-03);
+  border-bottom: 1px solid var(--white-06);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--white-40);
+  font-family: 'JetBrains Mono', monospace;
+}
+.history-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 100px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--white-06);
+  align-items: center;
+  transition: background .15s;
+}
+.history-row:last-child { border-bottom: none; }
+.history-row:hover { background: var(--white-03); }
+.history-row .tx-name { font-size: 14px; }
+.history-row .tx-date { font-size: 12px; color: var(--white-40); font-family: 'JetBrains Mono', monospace; }
+.history-type {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+  display: inline-block;
+}
+.history-type.credit { background: rgba(13,158,110,0.15); color: var(--emerald-lt); }
+.history-type.debit { background: rgba(224,82,82,0.1); color: var(--red); }
+
+/* ─── ADMIN EXTRAS ──────────────────────────────── */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+.admin-stat {
+  background: var(--navy-4);
+  border: 1px solid var(--white-06);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+}
+.admin-stat-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 600; color: var(--gold); }
+.admin-stat-lbl { font-size: 12px; color: var(--white-40); margin-top: 4px; }
+
+/* ─── Animations ────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─── Responsive ────────────────────────────────── */
+@media (max-width: 1100px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .overview-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-card-wrap { display: none; }
+  .hero-stats { gap: 20px; }
+  .features-head { grid-template-columns: 1fr; gap: 16px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .services-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .card-tab-layout { grid-template-columns: 1fr; }
+  .dash-two-col { grid-template-columns: 1fr; }
+  .history-thead, .history-row { grid-template-columns: 1fr 90px 80px; }
+  .history-thead > *:nth-child(4), .history-row > *:nth-child(4) { display: none; }
+}
+
+@media (max-width: 640px) {
+  .btn-nav-login { display: none; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .dash-topbar-inner { flex-direction: column; align-items: flex-start; height: auto; padding: 16px 0; gap: 12px; }
+  .loan-meta { gap: 20px; }
+  .history-thead, .history-row { grid-template-columns: 1fr 70px; }
+  .history-thead > *:nth-child(3), .history-row > *:nth-child(3) { display: none; }
+  .history-thead > *:nth-child(4), .history-row > *:nth-child(4) { display: none; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; gap: 24px; }
+  .hero-stat-divider { display: none; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .bank-card { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">UB</div>
+      <span class="nav-logo-text">UNITED BANK</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#services" class="nav-link">Services</a>
+      <a href="#contact" class="nav-link">Contact</a>
+      <button class="btn-nav-login" onclick="openLogin()">Account Login</button>
+    </div>
+
+    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#features" class="nav-link" onclick="toggleMobileMenu()">Features</a>
+  <a href="#services" class="nav-link" onclick="toggleMobileMenu()">Services</a>
+  <a href="#contact" class="nav-link" onclick="toggleMobileMenu()">Contact</a>
+  <button class="btn-nav-login" onclick="openLogin(); toggleMobileMenu()">Account Login</button>
+</div>
+
+<!-- ═══════════ PUBLIC SITE ═══════════ -->
+<div id="public-site">
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-inner">
+      <div class="hero-content">
+        <div class="hero-eyebrow">Trusted Banking Since 2024</div>
+        <h1 class="hero-title">
+          Banking Built<br>for <em>Confidence.</em>
+        </h1>
+        <p class="hero-sub">
+          Secure accounts, instant transfers, and premium card services — engineered for reliability and designed with purpose.
+        </p>
+        <div class="hero-ctas">
+          <button class="btn-primary" onclick="openLogin()">Access Your Account</button>
+          <a href="#features" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;">Learn More</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="total-accounts">—</div>
+            <div class="hero-stat-lbl">Active Accounts</div>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="total-deposits">—</div>
+            <div class="hero-stat-lbl">Total Deposits</div>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="total-transactions">—</div>
+            <div class="hero-stat-lbl">Transactions</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card-wrap">
+        <svg class="hero-card-svg" viewBox="0 0 440 277" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hcg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1a0a3e"/>
+              <stop offset="40%" stop-color="#4b1a80"/>
+              <stop offset="75%" stop-color="#a01060"/>
+              <stop offset="100%" stop-color="#e0305a"/>
+            </linearGradient>
+            <filter id="hcs"><feGaussianBlur in="SourceGraphic" stdDeviation="0"/></filter>
+            <linearGradient id="chip-g" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#d4af37"/>
+              <stop offset="100%" stop-color="#a07828"/>
+            </linearGradient>
+          </defs>
+          <rect width="440" height="277" rx="20" fill="url(#hcg)"/>
+          <!-- shine -->
+          <rect width="440" height="277" rx="20" fill="url(#shine-g)" opacity=".15"/>
+          <defs>
+            <linearGradient id="shine-g" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="white" stop-opacity=".3"/>
+              <stop offset="50%" stop-color="white" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- circles bg -->
+          <circle cx="360" cy="40" r="180" fill="rgba(255,255,255,0.05)"/>
+          <circle cx="360" cy="40" r="120" fill="rgba(255,255,255,0.04)"/>
+          <!-- chip -->
+          <rect x="28" y="80" width="52" height="40" rx="6" fill="url(#chip-g)"/>
+          <line x1="28" y1="95" x2="80" y2="95" stroke="#00000030" stroke-width="1"/>
+          <line x1="28" y1="105" x2="80" y2="105" stroke="#00000030" stroke-width="1"/>
+          <line x1="54" y1="80" x2="54" y2="120" stroke="#00000030" stroke-width="1"/>
+          <!-- labels -->
+          <text x="28" y="36" fill="rgba(255,255,255,0.65)" font-family="Arial" font-size="11" letter-spacing="2" font-weight="500">CREDIT CARD</text>
+          <text x="412" y="36" fill="rgba(255,255,255,0.85)" font-family="Georgia,serif" font-size="15" text-anchor="end" font-weight="600" letter-spacing="1">UNITED BANK</text>
+          <!-- number -->
+          <text x="28" y="172" font-family="Courier New,monospace" font-size="22" letter-spacing="5" fill="rgba(255,255,255,0.88)">1234  5678  9012  3456</text>
+          <!-- holder + expiry -->
+          <text x="28" y="213" font-family="Arial" font-size="12" letter-spacing="3" fill="rgba(255,255,255,0.6)" text-transform="uppercase">YOUR NAME</text>
+          <text x="28" y="242" fill="rgba(255,255,255,0.4)" font-family="Arial" font-size="10" letter-spacing="1">VALID THRU</text>
+          <text x="28" y="258" font-family="Courier New,monospace" font-size="14" fill="rgba(255,255,255,0.7)">12/27</text>
+          <!-- Network logo -->
+          <circle cx="396" cy="245" r="20" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="412" cy="245" r="20" fill="rgba(255,255,255,0.1)"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section features-section" id="features">
+    <div class="section-inner">
+      <div class="features-head">
+        <div>
+          <div class="section-tag">Why United Bank</div>
+          <h2 class="section-title">Everything you need,<br>nothing you don't.</h2>
+        </div>
+        <p class="section-sub">Comprehensive financial services built around security, speed, and simplicity. No fluff.</p>
+      </div>
+      <div class="features-grid">
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+          </div>
+          <div class="feat-name">Bank-Grade Security</div>
+          <div class="feat-desc">Your account is protected with encrypted credentials and secure authentication. Every login is verified.</div>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+          </div>
+          <div class="feat-name">Instant Transfers</div>
+          <div class="feat-desc">Send funds to any account in real-time. No delays, no queues — transactions settle immediately.</div>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+          </div>
+          <div class="feat-name">Premium Cards</div>
+          <div class="feat-desc">Credit and debit cards with fraud protection, freeze/unfreeze controls, and detailed spending history.</div>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+          </div>
+          <div class="feat-name">Financial Insights</div>
+          <div class="feat-desc">Track your balance, monitor transactions, and review your full account history at a glance.</div>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="feat-name">Loan Services</div>
+          <div class="feat-desc">Apply for personal or business loans with transparent terms and structured repayment plans.</div>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="feat-name">Verified Accounts</div>
+          <div class="feat-desc">Every account is verified and assigned a unique account number, card, and security credentials.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section services-section" id="services">
+    <div class="section-inner">
+      <div style="max-width:560px; margin-bottom:0;">
+        <div class="section-tag">Our Services</div>
+        <h2 class="section-title" style="color:var(--white);">The full suite,<br>right here.</h2>
+      </div>
+      <div class="services-grid">
+
+        <div class="svc-card">
+          <div class="svc-head">
+            <div class="svc-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
+            </div>
+            <div class="svc-name">Banking Services</div>
+          </div>
+          <ul class="svc-list">
+            <li>Checking &amp; Savings Accounts</li>
+            <li>High-Interest Savings Options</li>
+            <li>Overdraft Protection</li>
+            <li>Full Account Statements &amp; History</li>
+            <li>Mobile &amp; Online Banking</li>
+          </ul>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-head">
+            <div class="svc-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            </div>
+            <div class="svc-name">Card Services</div>
+          </div>
+          <ul class="svc-list">
+            <li>Credit Cards — 10% Interest</li>
+            <li>Debit Cards — 15% Interest</li>
+            <li>Virtual Card Numbers</li>
+            <li>Contactless Payments</li>
+            <li>Freeze / Unfreeze Controls</li>
+          </ul>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-head">
+            <div class="svc-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+            </div>
+            <div class="svc-name">Loan Services</div>
+          </div>
+          <ul class="svc-list">
+            <li>Personal Loans</li>
+            <li>Business Financing</li>
+            <li>Flexible Repayment Plans</li>
+            <li>Competitive Interest Rates</li>
+            <li>Quick Approval Process</li>
+          </ul>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-head">
+            <div class="svc-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+            </div>
+            <div class="svc-name">Transfer Services</div>
+          </div>
+          <ul class="svc-list">
+            <li>Instant Player-to-Player Transfers</li>
+            <li>Scheduled Payments</li>
+            <li>Bulk Transfers</li>
+            <li>Transaction History &amp; Receipts</li>
+            <li>Real-Time Confirmations</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="section-tag">Get Started</div>
+    <h2 class="section-title">Ready to open an account?</h2>
+    <p>Join our growing community of customers who bank with confidence.</p>
+    <button class="btn-primary" onclick="openLogin()" style="font-size:15px;padding:16px 40px;">Access Your Account</button>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="contact">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <div class="nav-logo-mark">UB</div>
+          <span class="nav-logo-text" style="font-size:18px;">UNITED BANK</span>
+        </div>
+        <p>Trusted financial services since 2024. Committed to security, reliability, and modern banking for everyone.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul class="footer-links">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#" onclick="openLogin();return false;">Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul class="footer-links">
+          <li><a href="#">Personal Banking</a></li>
+          <li><a href="#">Business Banking</a></li>
+          <li><a href="#">Loans</a></li>
+          <li><a href="#">Credit Cards</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul class="footer-links">
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Security</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 United Bank. All rights reserved.</p>
+      <p style="color:var(--white-20);">Trusted Banking Since 2024</p>
+    </div>
+  </footer>
+
+</div><!-- /public-site -->
+
+
+<!-- ═══════════ LOGIN MODAL ═══════════ -->
+<div class="modal-backdrop" id="login-modal">
+  <div class="login-modal">
+    <button class="modal-close-btn" onclick="closeLogin()">✕</button>
+    <div class="modal-logo">UB</div>
+    <h2 class="modal-title">Account Access</h2>
+    <p class="modal-sub">Secure Banking Terminal</p>
+
+    <div class="form-field">
+      <label class="form-label" for="login-username">Username (IGN)</label>
+      <input class="form-input" id="login-username" type="text" placeholder="Enter your username" autocomplete="off">
+    </div>
+    <div class="form-field">
+      <label class="form-label" for="login-password">Password</label>
+      <input class="form-input" id="login-password" type="password" placeholder="Enter your password">
+    </div>
+
+    <div class="form-error" id="login-error">Invalid credentials</div>
+    <button class="btn-full" id="login-btn" onclick="doLogin()">Access Account</button>
+  </div>
+</div>
+
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div id="dashboard">
+
+  <!-- Top Bar -->
+  <div class="dash-topbar">
+    <div class="dash-topbar-inner">
+      <div class="dash-greeting">
+        <h2>Welcome back, <span id="dash-username">—</span></h2>
+        <p id="dash-account-num">Account: —</p>
+      </div>
+      <div class="dash-actions">
+        <span class="dash-badge" id="dash-badge">USER</span>
+        <button class="btn-logout" onclick="logout()">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="dash-tabs">
+    <div class="dash-tabs-inner">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+        Overview
+      </button>
+      <button class="tab-btn" data-tab="card" onclick="switchTab('card')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+        My Card
+      </button>
+      <button class="tab-btn" data-tab="loans" onclick="switchTab('loans')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Loans
+      </button>
+      <button class="tab-btn" data-tab="history" onclick="switchTab('history')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        History
+      </button>
+      <button class="tab-btn" id="admin-tab-btn" data-tab="admin" onclick="switchTab('admin')" style="display:none;">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+        Admin
+      </button>
+    </div>
+  </div>
+
+  <!-- Dashboard Body -->
+  <div class="dash-body">
+    <div class="dash-body-inner">
+
+      <!-- ── OVERVIEW TAB ── -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="overview-grid">
+          <div class="stat-card">
+            <div class="stat-card-accent">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="stat-card-label">Available Balance</div>
+            <div class="stat-card-val gold" id="ov-balance">◆ 0.00</div>
+            <div class="stat-card-sub">Primary Account</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            </div>
+            <div class="stat-card-label">Card Status</div>
+            <div class="stat-card-val" id="ov-card-status">—</div>
+            <div class="stat-card-sub" id="ov-card-type">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+            </div>
+            <div class="stat-card-label">Transactions</div>
+            <div class="stat-card-val" id="ov-tx-count">0</div>
+            <div class="stat-card-sub">All time</div>
+          </div>
+        </div>
+
+        <div class="dash-two-col">
+          <div class="dash-box">
+            <div class="dash-box-title">Recent Transactions <span id="ov-tx-link" onclick="switchTab('history')" style="cursor:pointer;color:var(--gold);font-weight:600;">View All →</span></div>
+            <div class="tx-list" id="ov-tx-list">
+              <div class="tx-empty">No transactions yet.</div>
+            </div>
+          </div>
+          <div class="dash-box">
+            <div class="dash-box-title">Account Summary</div>
+            <div class="info-list" id="ov-account-info">
+              <div class="info-row"><span class="info-key">Account Number</span><span class="info-val" id="ov-acc-num">—</span></div>
+              <div class="info-row"><span class="info-key">Account Holder</span><span class="info-val" id="ov-holder">—</span></div>
+              <div class="info-row"><span class="info-key">Card Number</span><span class="info-val" id="ov-card-num">—</span></div>
+              <div class="info-row"><span class="info-key">Card Type</span><span class="info-val" id="ov-card-type-2">—</span></div>
+              <div class="info-row"><span class="info-key">Account Status</span><span class="info-val"><span class="badge-active">Active</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY CARD TAB ── -->
+      <div class="tab-panel" id="tab-card">
+        <div class="card-tab-layout">
+          <div class="card-display-wrap">
+            <div class="bank-card active-card" id="the-bank-card">
+              <!-- Frozen overlay (hidden by default) -->
+              <div class="frozen-overlay" id="frozen-overlay" style="display:none;">
+                <div class="frozen-label">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/></svg>
+                  Card Frozen
+                </div>
+              </div>
+              <!-- Chip -->
+              <div class="card-chip">
+                <svg viewBox="0 0 52 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="52" height="40" rx="6" fill="url(#chipGrad)"/>
+                  <defs>
+                    <linearGradient id="chipGrad" x1="0" y1="0" x2="52" y2="40" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#d4af37"/>
+                      <stop offset="1" stop-color="#a07828"/>
+                    </linearGradient>
+                  </defs>
+                  <line x1="0" y1="13" x2="52" y2="13" stroke="#00000025" stroke-width="1"/>
+                  <line x1="0" y1="26" x2="52" y2="26" stroke="#00000025" stroke-width="1"/>
+                  <line x1="17" y1="0" x2="17" y2="40" stroke="#00000025" stroke-width="1"/>
+                  <line x1="35" y1="0" x2="35" y2="40" stroke="#00000025" stroke-width="1"/>
+                  <rect x="17" y="13" width="18" height="13" rx="2" fill="#b8932c" opacity=".4"/>
+                </svg>
+              </div>
+              <div class="card-type-label" id="card-type-label">Credit Card</div>
+              <div class="card-bank-name">UNITED BANK</div>
+              <div class="card-number" id="card-display-number">•••• •••• •••• ••••</div>
+              <div class="card-holder" id="card-display-holder">CARD HOLDER</div>
+              <div class="card-expiry" id="card-display-expiry">••/••</div>
+            </div>
+          </div>
+
+          <div class="card-details-panel">
+            <div class="card-status-banner active" id="card-status-banner">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span id="card-status-text">Card Active — Transactions Enabled</span>
+            </div>
+
+            <div class="card-info-box">
+              <div class="info-list">
+                <div class="info-row"><span class="info-key">Card Number</span><span class="info-val" id="cd-number">—</span></div>
+                <div class="info-row"><span class="info-key">Card Type</span><span class="info-val" id="cd-type">—</span></div>
+                <div class="info-row"><span class="info-key">Card Holder</span><span class="info-val" id="cd-holder">—</span></div>
+                <div class="info-row"><span class="info-key">Expiry Date</span><span class="info-val" id="cd-expiry">—</span></div>
+                <div class="info-row"><span class="info-key">Credit Limit</span><span class="info-val" id="cd-limit">—</span></div>
+                <div class="info-row"><span class="info-key">Interest Rate</span><span class="info-val" id="cd-interest">—</span></div>
+                <div class="info-row">
+                  <span class="info-key">Status</span>
+                  <span class="info-val" id="cd-status-badge">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-box" style="padding:20px 20px;">
+              <div class="dash-box-title" style="margin-bottom:12px;">Card Transactions</div>
+              <div class="tx-list" id="card-tx-list">
+                <div class="tx-empty">No card transactions found.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOANS TAB ── -->
+      <div class="tab-panel" id="tab-loans">
+        <div id="loans-content">
+          <div class="loans-empty">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h3>No Active Loans</h3>
+            <p>You don't have any active or past loans on your account.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY TAB ── -->
+      <div class="tab-panel" id="tab-history">
+        <div class="history-filter">
+          <button class="filter-chip active" onclick="filterHistory('all', this)">All</button>
+          <button class="filter-chip" onclick="filterHistory('credit', this)">Credits</button>
+          <button class="filter-chip" onclick="filterHistory('debit', this)">Debits</button>
+        </div>
+        <div class="history-table">
+          <div class="history-thead">
+            <div>Description</div>
+            <div>Date</div>
+            <div>Type</div>
+            <div>Amount</div>
+          </div>
+          <div id="history-rows">
+            <div class="tx-empty">No transaction history yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN TAB ── -->
+      <div class="tab-panel" id="tab-admin">
+        <div class="dash-box" style="margin-bottom:20px;">
+          <div class="dash-box-title">System Overview</div>
+          <div class="admin-grid">
+            <div class="admin-stat">
+              <div class="admin-stat-val" id="adm-accounts">—</div>
+              <div class="admin-stat-lbl">Total Accounts</div>
+            </div>
+            <div class="admin-stat">
+              <div class="admin-stat-val" id="adm-deposits">—</div>
+              <div class="admin-stat-lbl">Total Deposits</div>
+            </div>
+            <div class="admin-stat">
+              <div class="admin-stat-val" id="adm-cards">—</div>
+              <div class="admin-stat-lbl">Active Cards</div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-box">
+          <div class="dash-box-title">Admin Controls</div>
+          <p style="color:var(--white-40);font-size:14px;margin-bottom:16px;">Access the full banking management panel to manage accounts, loans, and cards.</p>
+          <button class="btn-primary" onclick="window.open('lendhub-ultimate.html','_blank')">Open LendHub Admin Panel →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /dashboard -->
+
+
+<script>
+/* ─── Firebase Config ─── */
+const firebaseConfig = {
+  apiKey: "AIzaSyDv-3Vqsee3Dc3sNnrfGFlVZeAFJIhvl84",
+  authDomain: "pride-casi.firebaseapp.com",
+  databaseURL: "https://pride-casi-default-rtdb.firebaseio.com",
+  projectId: "pride-casi",
+  storageBucket: "pride-casi.firebasestorage.app",
+  messagingSenderId: "693920764912",
+  appId: "1:693920764912:web:0f445a99925f059a368335"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let currentUser = null;
+let isSuperAdmin = false;
+let allTransactions = [];
+
+/* ─── Navbar Scroll ─── */
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+/* ─── Mobile Menu ─── */
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const ham = document.getElementById('hamburger');
+  menu.classList.toggle('open');
+  ham.classList.toggle('open');
+}
+
+/* ─── Login Modal ─── */
+function openLogin() {
+  document.getElementById('login-modal').classList.add('active');
+  setTimeout(() => document.getElementById('login-username').focus(), 100);
+}
+function closeLogin() {
+  document.getElementById('login-modal').classList.remove('active');
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+document.getElementById('login-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('login-modal')) closeLogin();
+});
+
+/* ─── Login Logic ─── */
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!username || !password) {
+    showError('Please enter both username and password.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  errorEl.style.display = 'none';
+
+  try {
+    const snap = await db.ref('users/' + username).once('value');
+    if (!snap.exists()) { showError('Account not found.'); btn.disabled=false; btn.textContent='Access Account'; return; }
+
+    const data = snap.val();
+    if (data.password !== password) { showError('Incorrect password.'); btn.disabled=false; btn.textContent='Access Account'; return; }
+
+    currentUser = { username, ...data };
+    isSuperAdmin = (username === 'AvidChip7377');
+
+    closeLogin();
+    btn.disabled = false;
+    btn.textContent = 'Access Account';
+    showDashboard();
+  } catch (err) {
+    showError('Error: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Access Account';
+  }
+}
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-username').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password').focus(); });
+
+/* ─── Show Dashboard ─── */
+function showDashboard() {
+  document.getElementById('public-site').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+  document.getElementById('dashboard').style.display = 'block';
+
+  document.getElementById('dash-username').textContent = currentUser.username;
+  document.getElementById('dash-account-num').textContent = 'Account: ' + (currentUser.accountNumber || 'N/A');
+
+  const badge = document.getElementById('dash-badge');
+  if (isSuperAdmin) {
+    badge.textContent = 'SUPER ADMIN';
+    badge.classList.add('admin');
+    document.getElementById('admin-tab-btn').style.display = 'flex';
+    loadAdminStats();
+  } else {
+    badge.textContent = 'MEMBER';
+  }
+
+  buildTransactions();
+  populateOverview();
+  populateCard();
+  populateLoans();
+  populateHistory();
+  switchTab('overview');
+  window.scrollTo(0, 0);
+}
+
+/* ─── Tab Switching ─── */
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+
+/* ─── Build Transactions Array ─── */
+function buildTransactions() {
+  const txRaw = currentUser.transactions || {};
+  allTransactions = Object.entries(txRaw).map(([id, tx]) => ({
+    id,
+    description: tx.description || tx.type || 'Transaction',
+    date: tx.date || tx.timestamp || '',
+    type: (tx.type === 'credit' || (tx.amount > 0 && !tx.type)) ? 'credit' : 'debit',
+    amount: Math.abs(tx.amount || 0)
+  })).sort((a,b) => (b.date > a.date ? 1 : -1));
+}
+
+/* ─── Overview Tab ─── */
+function populateOverview() {
+  const bal = currentUser.balance || 0;
+  document.getElementById('ov-balance').textContent = '◆ ' + bal.toFixed(2);
+
+  const frozen = currentUser.cardFrozen || currentUser.frozen || false;
+  const cardType = currentUser.cardType || '—';
+  const statusEl = document.getElementById('ov-card-status');
+  if (frozen) {
+    statusEl.textContent = 'FROZEN';
+    statusEl.className = 'stat-card-val red';
+  } else {
+    statusEl.textContent = 'ACTIVE';
+    statusEl.className = 'stat-card-val emerald';
+  }
+  document.getElementById('ov-card-type').textContent = cardType;
+  document.getElementById('ov-tx-count').textContent = allTransactions.length;
+
+  document.getElementById('ov-acc-num').textContent = currentUser.accountNumber || '—';
+  document.getElementById('ov-holder').textContent = currentUser.username || '—';
+  document.getElementById('ov-card-num').textContent = maskCardNum(currentUser.cardNumber || '');
+  document.getElementById('ov-card-type-2').textContent = cardType;
+
+  // Recent transactions (last 5)
+  const listEl = document.getElementById('ov-tx-list');
+  const recent = allTransactions.slice(0, 5);
+  if (!recent.length) {
+    listEl.innerHTML = '<div class="tx-empty">No transactions yet.</div>';
+    return;
+  }
+  listEl.innerHTML = recent.map(tx => `
+    <div class="tx-row">
+      <div class="tx-icon">
+        ${tx.type === 'credit'
+          ? `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="var(--emerald-lt)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>`
+          : `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="var(--red)"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15"/></svg>`}
+      </div>
+      <div class="tx-info">
+        <div class="tx-name">${escHtml(tx.description)}</div>
+        <div class="tx-date">${formatDate(tx.date)}</div>
+      </div>
+      <div class="tx-amount ${tx.type}">${tx.type==='credit' ? '+' : '-'}◆${tx.amount.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+/* ─── Card Tab ─── */
+function populateCard() {
+  const frozen = currentUser.cardFrozen || currentUser.frozen || false;
+  const cardNum = currentUser.cardNumber || '';
+  const cardType = currentUser.cardType || '—';
+  const expiry = currentUser.cardExpiry || currentUser.expiry || '12/27';
+  const holder = (currentUser.username || '').toUpperCase();
+  const limit = currentUser.creditLimit || currentUser.limit || '—';
+  const interest = cardType.toLowerCase().includes('credit') ? '10%' : '15%';
+
+  // Card visual
+  const cardEl = document.getElementById('the-bank-card');
+  const frozenOverlay = document.getElementById('frozen-overlay');
+  if (frozen) {
+    cardEl.className = 'bank-card frozen-card';
+    frozenOverlay.style.display = 'flex';
+  } else {
+    cardEl.className = 'bank-card active-card';
+    frozenOverlay.style.display = 'none';
+  }
+
+  document.getElementById('card-type-label').textContent = cardType || 'Card';
+  document.getElementById('card-display-number').textContent = formatCardNumber(cardNum) || '•••• •••• •••• ••••';
+  document.getElementById('card-display-holder').textContent = holder || 'CARD HOLDER';
+  document.getElementById('card-display-expiry').textContent = expiry;
+
+  // Status banner
+  const banner = document.getElementById('card-status-banner');
+  const statusText = document.getElementById('card-status-text');
+  if (frozen) {
+    banner.className = 'card-status-banner frozen';
+    statusText.textContent = 'Card Frozen — Transactions Disabled';
+  } else {
+    banner.className = 'card-status-banner active';
+    statusText.textContent = 'Card Active — Transactions Enabled';
+  }
+
+  // Info fields
+  document.getElementById('cd-number').textContent = maskCardNum(cardNum);
+  document.getElementById('cd-type').textContent = cardType;
+  document.getElementById('cd-holder').textContent = holder;
+  document.getElementById('cd-expiry').textContent = expiry;
+  document.getElementById('cd-limit').textContent = limit !== '—' ? '◆ ' + Number(limit).toFixed(2) : '—';
+  document.getElementById('cd-interest').textContent = interest;
+  document.getElementById('cd-status-badge').innerHTML = frozen
+    ? '<span class="badge-frozen">Frozen</span>'
+    : '<span class="badge-active">Active</span>';
+
+  // Card transactions
+  const cardTxList = document.getElementById('card-tx-list');
+  const cardTxs = allTransactions.filter(t => t.source === 'card' || t.type !== undefined).slice(0, 8);
+  if (!cardTxs.length) {
+    cardTxList.innerHTML = '<div class="tx-empty">No card transactions found.</div>';
+  } else {
+    cardTxList.innerHTML = cardTxs.map(tx => `
+      <div class="tx-row">
+        <div class="tx-info">
+          <div class="tx-name">${escHtml(tx.description)}</div>
+          <div class="tx-date">${formatDate(tx.date)}</div>
+        </div>
+        <div class="tx-amount ${tx.type}">${tx.type==='credit'?'+':'-'}◆${tx.amount.toFixed(2)}</div>
+      </div>
+    `).join('');
+  }
+}
+
+/* ─── Loans Tab ─── */
+async function populateLoans() {
+  const loansContent = document.getElementById('loans-content');
+  try {
+    const snap = await db.ref('loans').orderByChild('borrower').equalTo(currentUser.username).once('value');
+    const loans = snap.val() || {};
+    const userLoans = currentUser.loans || {};
+    const combined = { ...loans, ...userLoans };
+    const entries = Object.entries(combined);
+
+    if (!entries.length) {
+      loansContent.innerHTML = `
+        <div class="loans-empty">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h3>No Active Loans</h3>
+          <p>You don't have any active or past loans on your account.</p>
+        </div>`;
+      return;
+    }
+
+    loansContent.innerHTML = entries.map(([id, loan]) => {
+      const amount = loan.amount || 0;
+      const paid = loan.amountPaid || 0;
+      const pct = amount > 0 ? Math.min(100, (paid / amount) * 100) : 0;
+      const status = loan.status || 'active';
+      return `
+        <div class="loan-card">
+          <div class="loan-top">
+            <div>
+              <div class="loan-id">LOAN #${id.slice(-6).toUpperCase()}</div>
+              <div class="loan-amount">◆ ${Number(amount).toFixed(2)}</div>
+            </div>
+            <span class="loan-status ${status}">${status.toUpperCase()}</span>
+          </div>
+          <div class="loan-progress-wrap">
+            <div class="loan-progress-labels">
+              <span>Paid: ◆${paid.toFixed(2)}</span>
+              <span>Remaining: ◆${(amount - paid).toFixed(2)}</span>
+            </div>
+            <div class="loan-progress-bar"><div class="loan-progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="loan-meta">
+            <div class="loan-meta-item"><strong>${loan.interestRate || '—'}%</strong>Interest Rate</div>
+            <div class="loan-meta-item"><strong>${loan.dueDate || '—'}</strong>Due Date</div>
+            <div class="loan-meta-item"><strong>${pct.toFixed(0)}%</strong>Repaid</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    loansContent.innerHTML = '<div class="loans-empty"><h3>Could not load loans</h3><p>' + e.message + '</p></div>';
+  }
+}
+
+/* ─── History Tab ─── */
+let historyFilter = 'all';
+function populateHistory(filter) {
+  filter = filter || historyFilter;
+  const rows = allTransactions.filter(tx => filter === 'all' || tx.type === filter);
+  const el = document.getElementById('history-rows');
+  if (!rows.length) {
+    el.innerHTML = '<div class="tx-empty">No transactions found.</div>';
+    return;
+  }
+  el.innerHTML = rows.map(tx => `
+    <div class="history-row">
+      <div>
+        <div class="tx-name">${escHtml(tx.description)}</div>
+        <div class="tx-date">${formatDate(tx.date)}</div>
+      </div>
+      <div class="tx-date">${formatDate(tx.date)}</div>
+      <div><span class="history-type ${tx.type}">${tx.type}</span></div>
+      <div class="tx-amount ${tx.type}">${tx.type==='credit'?'+':'-'}◆${tx.amount.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+function filterHistory(filter, el) {
+  historyFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  populateHistory(filter);
+}
+
+/* ─── Admin Stats ─── */
+async function loadAdminStats() {
+  try {
+    const usersSnap = await db.ref('users').once('value');
+    const users = usersSnap.val() || {};
+    const totalAccounts = Object.keys(users).length;
+    const totalDep = Object.values(users).reduce((s,u) => s + (u.balance||0), 0);
+    const cardsSnap = await db.ref('cards').once('value');
+    const totalCards = Object.keys(cardsSnap.val() || {}).length;
+    document.getElementById('adm-accounts').textContent = totalAccounts;
+    document.getElementById('adm-deposits').textContent = '◆' + totalDep.toFixed(0);
+    document.getElementById('adm-cards').textContent = totalCards;
+  } catch(e) {}
+}
+
+/* ─── Public Stats ─── */
+async function loadPublicStats() {
+  try {
+    const snap = await db.ref('users').once('value');
+    const users = snap.val() || {};
+    const total = Object.keys(users).length;
+    const dep = Object.values(users).reduce((s,u) => s + (u.balance||0), 0);
+    let txCount = 0;
+    for (const u of Object.values(users)) { if (u.transactions) txCount += Object.keys(u.transactions).length; }
+    document.getElementById('total-accounts').textContent = total;
+    document.getElementById('total-deposits').textContent = '◆' + dep.toFixed(0);
+    document.getElementById('total-transactions').textContent = txCount;
+  } catch(e) {}
+}
+
+/* ─── Logout ─── */
+function logout() {
+  currentUser = null;
+  isSuperAdmin = false;
+  allTransactions = [];
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('public-site').style.display = 'block';
+  document.getElementById('admin-tab-btn').style.display = 'none';
+  document.getElementById('dash-badge').className = 'dash-badge';
+  window.scrollTo(0, 0);
+}
+
+/* ─── Helpers ─── */
+function maskCardNum(num) {
+  if (!num) return '—';
+  const s = String(num).replace(/\s/g,'');
+  if (s.length < 8) return s;
+  return s.slice(0,4) + ' •••• •••• ' + s.slice(-4);
+}
+function formatCardNumber(num) {
+  if (!num) return '';
+  const s = String(num).replace(/\s/g,'');
+  return s.match(/.{1,4}/g)?.join(' ') || s;
+}
+function formatDate(d) {
+  if (!d) return '—';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt)) return String(d);
+    return dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  } catch { return String(d); }
+}
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─── Init ─── */
+document.addEventListener('DOMContentLoaded', () => {
+  loadPublicStats();
+});
+</script>
+</body>
+</html>
