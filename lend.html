@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LendHub — Financial Operations Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+:root {
+  --bg:       #060810;
+  --surface:  #0d1117;
+  --surface2: #131920;
+  --surface3: #1a2230;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --gold:     #c9a84c;
+  --gold-lt:  #e2c97e;
+  --gold-dk:  #9a7830;
+  --gold-10:  rgba(201,168,76,0.10);
+  --gold-20:  rgba(201,168,76,0.20);
+  --gold-30:  rgba(201,168,76,0.30);
+  --emerald:  #0fa36a;
+  --em-lt:    #12c98a;
+  --em-10:    rgba(15,163,106,0.10);
+  --em-20:    rgba(15,163,106,0.20);
+  --red:      #e05050;
+  --red-10:   rgba(224,80,80,0.10);
+  --red-20:   rgba(224,80,80,0.20);
+  --amber:    #e09040;
+  --amb-10:   rgba(224,144,64,0.10);
+  --amb-20:   rgba(224,144,64,0.20);
+  --blue:     #4a8cdb;
+  --blue-10:  rgba(74,140,219,0.10);
+  --purple:   #9b6ee0;
+  --pur-10:   rgba(155,110,224,0.10);
+  --text:     #ffffff;
+  --text-80:  rgba(255,255,255,0.80);
+  --text-60:  rgba(255,255,255,0.60);
+  --text-40:  rgba(255,255,255,0.40);
+  --text-20:  rgba(255,255,255,0.20);
+  --text-10:  rgba(255,255,255,0.10);
+  --sidebar:  260px;
+  --header:   64px;
+  --radius:   14px;
+  --radius-sm:9px;
+}
+
+html{scroll-behavior:smooth;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+button{font-family:'Syne',sans-serif;}
+input,select,textarea{font-family:'Syne',sans-serif;}
+code{font-family:'JetBrains Mono',monospace;}
+
+/* ── Toast ─────────────────── */
+#toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:14px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;min-width:240px;max-width:360px;box-shadow:0 20px 48px rgba(0,0,0,0.6);animation:toastIn .3s ease-out;pointer-events:all;}
+.toast.success{border-color:var(--em-20);color:var(--em-lt);}
+.toast.error{border-color:var(--red-20);color:var(--red);}
+.toast.info{border-color:var(--gold-20);color:var(--gold-lt);}
+.toast-icon{width:20px;height:20px;flex-shrink:0;}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+@keyframes toastOut{from{opacity:1;}to{opacity:0;transform:translateX(20px);}}
+
+/* ── Login ──────────────────── */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:var(--bg);position:relative;overflow:hidden;}
+.login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 20% 50%,rgba(201,168,76,0.07) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 80% 80%,rgba(15,163,106,0.05) 0%,transparent 60%);pointer-events:none;}
+.login-screen::after{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--text-10) 1px,transparent 1px),linear-gradient(90deg,var(--text-10) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse 60% 80% at 50% 50%,black 30%,transparent 100%);pointer-events:none;opacity:.3;}
+.login-box{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:56px 48px;max-width:460px;width:100%;position:relative;z-index:1;box-shadow:0 60px 120px rgba(0,0,0,0.8),0 0 80px var(--gold-10);}
+.login-logo{width:68px;height:68px;margin:0 auto 28px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--bg);box-shadow:0 8px 28px var(--gold-20);}
+.login-title{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;text-align:center;margin-bottom:6px;letter-spacing:-.02em;}
+.login-sub{text-align:center;font-size:13px;color:var(--text-40);letter-spacing:.08em;text-transform:uppercase;margin-bottom:40px;}
+.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-40);margin-bottom:7px;font-family:'JetBrains Mono',monospace;}
+.inp{width:100%;padding:13px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:'JetBrains Mono',monospace;transition:all .2s;outline:none;}
+.inp::placeholder{color:var(--text-20);}
+.inp:focus{border-color:var(--gold-20);box-shadow:0 0 0 3px var(--gold-10);}
+.inp-group{margin-bottom:18px;}
+.btn-login-submit{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border:none;border-radius:var(--radius-sm);color:var(--bg);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .25s;box-shadow:0 4px 20px var(--gold-20);margin-top:4px;}
+.btn-login-submit:hover{opacity:.9;transform:translateY(-2px);}
+.login-error{background:var(--red-10);border:1px solid var(--red-20);border-radius:var(--radius-sm);padding:11px 14px;color:var(--red);font-size:13px;margin-bottom:16px;display:none;}
+
+/* ── App Layout ─────────────── */
+.app{display:none;min-height:100vh;}
+.app.active{display:flex;}
+
+/* ── Sidebar ────────────────── */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:200;transition:transform .3s ease;}
+.sidebar-head{padding:24px 20px;border-bottom:1px solid var(--border);}
+.sb-logo{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.sb-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--bg);box-shadow:0 4px 14px var(--gold-20);flex-shrink:0;}
+.sb-logo-text{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;letter-spacing:-.01em;}
+.sb-user{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .2s;}
+.sb-user:hover{border-color:var(--gold-20);}
+.sb-avatar{width:38px;height:38px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--bg);flex-shrink:0;}
+.sb-uname{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-role{font-size:11px;color:var(--gold);font-weight:600;letter-spacing:.05em;text-transform:uppercase;}
+.sidebar-nav{flex:1;padding:20px 12px;overflow-y:auto;}
+.nav-section{margin-bottom:28px;}
+.nav-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text-30,var(--text-40));padding:0 10px 10px;opacity:.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:var(--radius-sm);color:var(--text-60);cursor:pointer;transition:all .18s;font-size:13px;font-weight:600;position:relative;user-select:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text-80);}
+.nav-item.active{background:var(--gold-10);color:var(--gold-lt);border:1px solid var(--gold-20);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;stroke:currentColor;}
+.nav-badge{margin-left:auto;padding:2px 8px;background:var(--red-10);border:1px solid var(--red-20);border-radius:100px;font-size:10px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace;}
+.nav-badge.gold{background:var(--gold-10);border-color:var(--gold-20);color:var(--gold-lt);}
+.sidebar-foot{padding:16px 12px;border-top:1px solid var(--border);}
+.btn-signout{width:100%;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text-60);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-signout svg{width:14px;height:14px;stroke:currentColor;}
+.btn-signout:hover{border-color:var(--red-20);color:var(--red);background:var(--red-10);}
+
+/* Mobile sidebar toggle */
+.sb-toggle{display:none;position:fixed;top:16px;left:16px;z-index:300;width:40px;height:40px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;align-items:center;justify-content:center;cursor:pointer;}
+.sb-toggle svg{width:18px;height:18px;stroke:var(--text-60);}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:190;}
+
+/* ── Main ───────────────────── */
+.main{flex:1;margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;}
+.topbar{height:var(--header);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100;flex-shrink:0;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;letter-spacing:-.01em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.topbar-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-40);display:flex;align-items:center;gap:6px;}
+.dot-live{width:6px;height:6px;background:var(--em-lt);border-radius:50%;animation:pulse-dot 2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.3;}}
+.content{padding:28px;flex:1;}
+
+/* ── Buttons ────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:var(--radius-sm);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .2s;border:none;white-space:nowrap;}
+.btn svg{width:14px;height:14px;stroke:currentColor;flex-shrink:0;}
+.btn-gold{background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:var(--bg);box-shadow:0 2px 12px var(--gold-20);}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px var(--gold-30);}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text-60);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.btn-danger{background:var(--red-10);border:1px solid var(--red-20);color:var(--red);}
+.btn-danger:hover{background:var(--red-20);}
+.btn-success{background:var(--em-10);border:1px solid var(--em-20);color:var(--em-lt);}
+.btn-success:hover{background:var(--em-20);}
+.btn-sm{padding:7px 14px;font-size:12px;}
+.btn-xs{padding:5px 11px;font-size:11px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
+
+/* ── Cards/Boxes ────────────── */
+.box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+.box-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+.box-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;letter-spacing:-.01em;}
+.box-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── Stats Grid ─────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.stat-card-bar{position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .3s;}
+.stat-card:hover .stat-card-bar{opacity:1;}
+.stat-card-bar.gold{background:linear-gradient(90deg,var(--gold-dk),var(--gold));}
+.stat-card-bar.green{background:linear-gradient(90deg,var(--emerald),var(--em-lt));}
+.stat-card-bar.red{background:linear-gradient(90deg,#a03030,var(--red));}
+.stat-card-bar.blue{background:linear-gradient(90deg,#2a5caa,var(--blue));}
+.stat-card-bar.purple{background:linear-gradient(90deg,#5a3caa,var(--purple));}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.stat-icon svg{width:18px;height:18px;}
+.stat-icon.gold{background:var(--gold-10);border:1px solid var(--gold-20);}
+.stat-icon.gold svg{stroke:var(--gold);}
+.stat-icon.green{background:var(--em-10);border:1px solid var(--em-20);}
+.stat-icon.green svg{stroke:var(--em-lt);}
+.stat-icon.red{background:var(--red-10);border:1px solid var(--red-20);}
+.stat-icon.red svg{stroke:var(--red);}
+.stat-icon.blue{background:var(--blue-10);border:1px solid rgba(74,140,219,.2);}
+.stat-icon.blue svg{stroke:var(--blue);}
+.stat-icon.purple{background:var(--pur-10);border:1px solid rgba(155,110,224,.2);}
+.stat-icon.purple svg{stroke:var(--purple);}
+.stat-change{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:100px;}
+.stat-change.up{background:var(--em-10);color:var(--em-lt);}
+.stat-change.down{background:var(--red-10);color:var(--red);}
+.stat-change.neutral{background:var(--gold-10);color:var(--gold-lt);}
+.stat-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;line-height:1;color:var(--text);}
+
+/* ── Table ──────────────────── */
+.tbl-wrap{overflow-x:auto;}
+table.tbl{width:100%;border-collapse:collapse;}
+.tbl thead th{text-align:left;padding:12px 16px;font-size:11px;font-weight:700;color:var(--text-40);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+.tbl tbody td{padding:16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-80);vertical-align:middle;}
+.tbl tbody tr{transition:background .15s;}
+.tbl tbody tr:hover{background:var(--surface2);}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ── Badges ─────────────────── */
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;}
+.badge-green{background:var(--em-10);color:var(--em-lt);border:1px solid var(--em-20);}
+.badge-red{background:var(--red-10);color:var(--red);border:1px solid var(--red-20);}
+.badge-gold{background:var(--gold-10);color:var(--gold-lt);border:1px solid var(--gold-20);}
+.badge-gray{background:var(--text-10);color:var(--text-40);border:1px solid var(--border);}
+.badge-blue{background:var(--blue-10);color:var(--blue);border:1px solid rgba(74,140,219,.2);}
+.badge-purple{background:var(--pur-10);color:var(--purple);border:1px solid rgba(155,110,224,.2);}
+
+/* ── Risk Score Display ─────── */
+.risk-meter{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.risk-arc{position:relative;width:120px;height:64px;overflow:hidden;}
+.risk-arc svg{width:120px;height:120px;position:absolute;top:0;left:0;}
+.risk-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;text-align:center;line-height:1;}
+.risk-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.risk-label.low{color:var(--em-lt);}
+.risk-label.medium{color:var(--amber);}
+.risk-label.high{color:var(--red);}
+
+/* ── Risk Bar ───────────────── */
+.risk-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.risk-bar-label{font-size:12px;color:var(--text-60);min-width:140px;font-family:'JetBrains Mono',monospace;}
+.risk-bar-track{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.risk-bar-score{font-family:'JetBrains Mono',monospace;font-size:12px;min-width:40px;text-align:right;}
+
+/* ── Form ───────────────────── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:18px;}
+.form-field{display:flex;flex-direction:column;gap:6px;}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+select.inp option{background:var(--surface);}
+
+/* ── Modal ──────────────────── */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(16px);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal.active{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:40px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 60px 120px rgba(0,0,0,0.9);position:relative;animation:modalIn .3s ease-out;}
+.modal-box.lg{max-width:860px;}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.modal-close{position:absolute;top:20px;right:20px;width:34px;height:34px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-60);cursor:pointer;transition:all .2s;font-size:18px;line-height:1;}
+.modal-close:hover{background:var(--red-10);border-color:var(--red-20);color:var(--red);}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em;}
+.modal-sub{font-size:13px;color:var(--text-40);margin-bottom:28px;}
+
+/* ── Card 3D ────────────────── */
+.card3d-wrap{perspective:1200px;margin:24px 0;}
+.card3d{width:100%;max-width:420px;margin:0 auto;cursor:pointer;position:relative;}
+.card3d-inner{width:100%;padding-bottom:63%;position:relative;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.4,0,.2,1);}
+.card3d.flipped .card3d-inner{transform:rotateY(180deg);}
+.card3d-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.7),0 0 40px var(--gold-10);}
+.card3d-back{transform:rotateY(180deg);background:linear-gradient(135deg,#080808,#1a1a1a);padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;}
+.card-stripe{width:100%;height:48px;background:linear-gradient(180deg,#000 0%,#111 50%,#000 100%);border-radius:3px;margin-bottom:28px;}
+.cvv-panel{background:rgba(255,255,255,.95);border-radius:10px;padding:14px 18px;}
+.cvv-lbl{font-size:9px;color:#666;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.cvv-num{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:#000;letter-spacing:6px;}
+.card-terms-txt{font-size:8px;color:rgba(255,255,255,.3);text-align:center;line-height:1.7;font-family:'JetBrains Mono',monospace;}
+
+/* ── Risk Calculator UI ─────── */
+.risk-calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.risk-result-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;gap:16px;}
+.risk-score-big{font-family:'JetBrains Mono',monospace;font-size:64px;font-weight:700;line-height:1;text-align:center;}
+.risk-verdict{text-align:center;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:6px 18px;border-radius:100px;display:inline-block;margin:0 auto;}
+.risk-verdict.low{background:var(--em-10);color:var(--em-lt);border:1px solid var(--em-20);}
+.risk-verdict.medium{background:var(--amb-10);color:var(--amber);border:1px solid var(--amb-20);}
+.risk-verdict.high{background:var(--red-10);color:var(--red);border:1px solid var(--red-20);}
+.risk-factor{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.risk-factor:last-child{border-bottom:none;}
+.risk-factor-name{font-size:13px;color:var(--text-60);}
+.risk-factor-score{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
+
+/* ── Repayment Schedule ─────── */
+.repay-row{display:grid;grid-template-columns:60px 1fr 1fr 1fr 100px;gap:12px;align-items:center;padding:12px 16px;border-radius:var(--radius-sm);transition:background .15s;}
+.repay-row:hover{background:var(--surface2);}
+.repay-row.paid{opacity:.5;}
+.repay-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-40);font-weight:700;}
+
+/* ── Progress Bar ───────────── */
+.progress-track{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.progress-fill.gold{background:linear-gradient(90deg,var(--gold-dk),var(--gold));}
+.progress-fill.green{background:linear-gradient(90deg,var(--emerald),var(--em-lt));}
+.progress-fill.red{background:linear-gradient(90deg,#a03030,var(--red));}
+
+/* ── Mini Sparkline SVG ─────── */
+.sparkline{display:inline-block;vertical-align:middle;}
+
+/* ── Two-col layout ─────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── Activity Feed ──────────── */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.activity-item:last-child{border-bottom:none;}
+.act-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.act-icon svg{width:15px;height:15px;}
+.act-content{flex:1;min-width:0;}
+.act-title{font-size:13px;font-weight:600;}
+.act-time{font-size:11px;color:var(--text-40);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.act-amount{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;white-space:nowrap;}
+
+/* ── Divider ────────────────── */
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+
+/* ── Empty State ────────────── */
+.empty-state{text-align:center;padding:60px 30px;}
+.empty-state svg{width:52px;height:52px;stroke:var(--text-20);margin-bottom:16px;}
+.empty-state h3{font-size:18px;margin-bottom:6px;color:var(--text-60);}
+.empty-state p{font-size:14px;color:var(--text-40);}
+
+/* ── Info Row ───────────────── */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+.info-row:last-child{border-bottom:none;}
+.info-key{font-size:13px;color:var(--text-40);}
+.info-val{font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text-80);text-align:right;}
+
+/* ── Animations ─────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp .35s ease-out;}
+
+/* ── Responsive ─────────────── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .sb-toggle{display:flex;}
+  .sb-overlay.open{display:block;}
+  .main{margin-left:0;}
+  .content{padding:16px;}
+  .topbar{padding:0 16px 0 60px;}
+  .risk-calc-grid{grid-template-columns:1fr;}
+  .two-col{grid-template-columns:1fr;}
+  .three-col{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:560px){
+  .stats-grid{grid-template-columns:1fr;}
+  .login-box{padding:36px 24px;}
+  .repay-row{grid-template-columns:40px 1fr 1fr;gap:8px;}
+  .repay-row>*:nth-child(4){display:none;}
+}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- ═════════ LOGIN ═════════ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">LH</div>
+    <h1 class="login-title">LendHub</h1>
+    <p class="login-sub">Financial Operations Portal</p>
+    <div class="login-error" id="login-error"></div>
+    <form onsubmit="doLogin(event)">
+      <div class="inp-group">
+        <label class="lbl">Username</label>
+        <input class="inp" type="text" id="inp-username" autocomplete="off" required>
+      </div>
+      <div class="inp-group">
+        <label class="lbl">Password</label>
+        <input class="inp" type="password" id="inp-password" required>
+      </div>
+      <button type="submit" class="btn-login-submit" id="login-btn">Access Portal</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═════════ APP ═════════ -->
+<div class="app" id="app">
+
+  <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+  </button>
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sb-logo">
+        <div class="sb-logo-icon">LH</div>
+        <div class="sb-logo-text">LendHub</div>
+      </div>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">U</div>
+        <div>
+          <div class="sb-uname" id="sb-name">—</div>
+          <div class="sb-role" id="sb-role">Member</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="nav-menu"></nav>
+    <div class="sidebar-foot">
+      <button class="btn-signout" onclick="logout()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h2 class="page-title" id="page-title">Dashboard</h2>
+      <div class="topbar-right">
+        <div class="topbar-time">
+          <div class="dot-live"></div>
+          <span id="live-time">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<!-- ═════════ MODALS ═════════ -->
+
+<!-- Card Modal -->
+<div class="modal" id="modal-card">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-card')">✕</button>
+    <h2 class="modal-title" id="card-modal-title">Your Card</h2>
+    <p class="modal-sub">Click card to reveal CVV</p>
+    <div class="card3d-wrap">
+      <div class="card3d" id="card3d" onclick="this.classList.toggle('flipped')">
+        <div class="card3d-inner">
+          <div class="card3d-face" id="card-front"></div>
+          <div class="card3d-face card3d-back">
+            <div class="card-stripe"></div>
+            <div class="cvv-panel">
+              <div class="cvv-lbl">Security Code (CVV)</div>
+              <div class="cvv-num" id="card-cvv-num">•••</div>
+            </div>
+            <div class="card-terms-txt">This card is property of United Bank. Unauthorized use is prohibited and subject to prosecution. For support, contact your account manager. Keep your PIN confidential.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;" id="card-modal-details"></div>
+  </div>
+</div>
+
+<!-- Create Card Modal -->
+<div class="modal" id="modal-create-card">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-create-card')">✕</button>
+    <h2 class="modal-title">Issue New Card</h2>
+    <p class="modal-sub">Generate and assign a card to a user</p>
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="lbl">Username</label>
+        <input class="inp" id="cc-username" placeholder="Enter exact username" autocomplete="off">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Card Type</label>
+        <select class="inp" id="cc-type">
+          <option value="credit">Credit Card</option>
+          <option value="debit">Debit Card</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="lbl">Credit Limit (◆)</label>
+        <input class="inp" id="cc-limit" type="number" value="5000">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Expiry (MM/YY)</label>
+        <input class="inp" id="cc-expiry" placeholder="12/27">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-create-card')">Cancel</button>
+      <button class="btn btn-gold" onclick="createCard()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        Issue Card
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Approve Loan Modal -->
+<div class="modal" id="modal-approve">
+  <div class="modal-box lg">
+    <button class="modal-close" onclick="closeModal('modal-approve')">✕</button>
+    <h2 class="modal-title">Review Loan Application</h2>
+    <p class="modal-sub" id="approve-borrower-line">Borrower: —</p>
+    <div id="approve-content"></div>
+  </div>
+</div>
+
+<!-- Edit Balance Modal -->
+<div class="modal" id="modal-balance">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-balance')">✕</button>
+    <h2 class="modal-title">Edit Account Balance</h2>
+    <p class="modal-sub" id="balance-modal-user">User: —</p>
+    <div class="form-grid">
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Operation</label>
+        <select class="inp" id="bal-op">
+          <option value="set">Set Balance To</option>
+          <option value="add">Add Funds</option>
+          <option value="subtract">Subtract Funds</option>
+        </select>
+      </div>
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Amount (◆)</label>
+        <input class="inp" id="bal-amount" type="number" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Note (Optional)</label>
+        <input class="inp" id="bal-note" placeholder="Admin adjustment...">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-balance')">Cancel</button>
+      <button class="btn btn-gold" onclick="applyBalanceEdit()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal" id="modal-payment">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
+    <h2 class="modal-title">Record Payment</h2>
+    <p class="modal-sub" id="payment-loan-line">Loan: —</p>
+    <div id="repayment-schedule"></div>
+    <div class="form-grid" style="margin-top:20px;">
+      <div class="form-field">
+        <label class="lbl">Payment Amount (◆)</label>
+        <input class="inp" id="pay-amount" type="number" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Note</label>
+        <input class="inp" id="pay-note" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-gold" onclick="recordPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Blacklist Add Modal -->
+<div class="modal" id="modal-blacklist">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-blacklist')">✕</button>
+    <h2 class="modal-title">Add to Blacklist</h2>
+    <div class="form-grid">
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Username</label>
+        <input class="inp" id="bl-username" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Reason</label>
+        <input class="inp" id="bl-reason" placeholder="Reason for blacklisting">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-blacklist')">Cancel</button>
+      <button class="btn btn-danger" onclick="addBlacklist()">Blacklist User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Collateral Modal -->
+<div class="modal" id="modal-collateral">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-collateral')">✕</button>
+    <h2 class="modal-title">Log Collateral</h2>
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="lbl">Borrower Username</label>
+        <input class="inp" id="col-user" placeholder="Username">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Item / Asset</label>
+        <input class="inp" id="col-item" placeholder="e.g. Diamond Sword, Property">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Estimated Value (◆)</label>
+        <input class="inp" id="col-value" type="number" placeholder="0">
+      </div>
+      <div class="form-field">
+        <label class="lbl">Linked Loan ID (optional)</label>
+        <input class="inp" id="col-loan" placeholder="Loan ID">
+      </div>
+      <div class="form-field" style="grid-column:1/-1;">
+        <label class="lbl">Notes</label>
+        <input class="inp" id="col-notes" placeholder="Additional details...">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-collateral')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveCollateral()">Log Collateral</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Firebase ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDv-3Vqsee3Dc3sNnrfGFlVZeAFJIhvl84",
+  authDomain: "pride-casi.firebaseapp.com",
+  databaseURL: "https://pride-casi-default-rtdb.firebaseio.com",
+  projectId: "pride-casi",
+  storageBucket: "pride-casi.firebasestorage.app",
+  messagingSenderId: "693920764912",
+  appId: "1:693920764912:web:0f445a99925f059a368335"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let user = null, isAdmin = false;
+let settings = { creditInterestRate: 10, debitInterestRate: 15, minLoanAmount: 100, maxLoanAmount: 10000 };
+let _balUser = null, _payLoanId = null, _payLoan = null;
+
+// ── Live Clock ────────────────────────────────────────────
+setInterval(() => {
+  const el = document.getElementById('live-time');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+}, 1000);
+
+// ── Toast ─────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = {
+    success: `<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="toast-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+    error: `<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="toast-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`,
+    info: `<svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="toast-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>`
+  };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = icons[type] + `<span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => { t.style.animation = 'toastOut .3s ease-out forwards'; setTimeout(() => t.remove(), 300); }, 3200);
+}
+
+// ── Sidebar Toggle ────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); }));
+
+// ── Login ─────────────────────────────────────────────────
+async function doLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('inp-username').value.trim();
+  const password = document.getElementById('inp-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  try {
+    const snap = await db.ref('users/' + username).once('value');
+    if (!snap.exists()) { showErr('Account not found.'); return; }
+    const data = snap.val();
+    if (data.password !== password) { showErr('Incorrect password.'); return; }
+    user = { username, ...data };
+    isAdmin = (username === 'AvidChip7377');
+    await loadSettings();
+    showApp();
+  } catch (err) { showErr('Error: ' + err.message); }
+  finally { btn.disabled = false; btn.textContent = 'Access Portal'; }
+}
+function showErr(msg) {
+  const e = document.getElementById('login-error');
+  e.textContent = msg; e.style.display = 'block';
+}
+
+// ── Load Settings ─────────────────────────────────────────
+async function loadSettings() {
+  const snap = await db.ref('settings').once('value');
+  if (snap.exists()) settings = { ...settings, ...snap.val() };
+}
+
+// ── Show App ──────────────────────────────────────────────
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('sb-avatar').textContent = user.username[0].toUpperCase();
+  document.getElementById('sb-name').textContent = user.username;
+  document.getElementById('sb-role').textContent = isAdmin ? 'Super Admin' : 'Member';
+  buildNav();
+  navTo('dashboard');
+}
+
+// ── Navigation ────────────────────────────────────────────
+const PAGE_TITLES = {
+  dashboard: 'Dashboard', 'request-loan': 'Request Loan', 'my-loans': 'My Loans',
+  'my-card': 'My Card', calculator: 'Loan Calculator', 'risk-calc': 'Risk Calculator',
+  'loan-approvals': 'Loan Approvals', 'all-loans': 'All Loans', 'accounts': 'Account Manager',
+  'card-mgmt': 'Card Management', 'repayments': 'Repayment Tracker', 'collateral': 'Collateral Vault',
+  analytics: 'Analytics', 'credit-scores': 'Credit Scores', blacklist: 'Blacklist',
+  'audit-log': 'Audit Log', settings: 'System Settings'
+};
+
+function buildNav() {
+  const userLinks = [
+    { id: 'dashboard', icon: gridIcon(), label: 'Dashboard' },
+    { id: 'request-loan', icon: plusIcon(), label: 'Request Loan' },
+    { id: 'my-loans', icon: fileIcon(), label: 'My Loans', badge: 'my-loans-count' },
+    { id: 'my-card', icon: cardIcon(), label: 'My Card' },
+    { id: 'calculator', icon: calcIcon(), label: 'Loan Calculator' },
+    { id: 'risk-calc', icon: shieldIcon(), label: 'Risk Calculator' },
+  ];
+  const adminLinks = [
+    { id: 'loan-approvals', icon: checkIcon(), label: 'Loan Approvals', badge: 'pending-count', badgeType: 'red' },
+    { id: 'all-loans', icon: listIcon(), label: 'All Loans' },
+    { id: 'repayments', icon: refreshIcon(), label: 'Repayment Tracker' },
+    { id: 'accounts', icon: usersIcon(), label: 'Account Manager' },
+    { id: 'card-mgmt', icon: cardIcon(), label: 'Card Management' },
+    { id: 'collateral', icon: lockIcon(), label: 'Collateral Vault' },
+    { id: 'analytics', icon: chartIcon(), label: 'Analytics' },
+    { id: 'credit-scores', icon: starIcon(), label: 'Credit Scores' },
+    { id: 'blacklist', icon: banIcon(), label: 'Blacklist' },
+    { id: 'audit-log', icon: logIcon(), label: 'Audit Log' },
+    { id: 'settings', icon: gearIcon(), label: 'System Settings' },
+  ];
+
+  let html = `<div class="nav-section"><div class="nav-section-label">Menu</div>`;
+  html += userLinks.map(l => navLink(l)).join('');
+  html += `</div>`;
+  if (isAdmin) {
+    html += `<div class="nav-section"><div class="nav-section-label">Administration</div>`;
+    html += adminLinks.map(l => navLink(l)).join('');
+    html += `</div>`;
+  }
+  document.getElementById('nav-menu').innerHTML = html;
+  updatePendingBadge();
+}
+
+function navLink(l) {
+  const badge = l.badge ? `<span class="nav-badge${l.badgeType === 'red' ? '' : ' gold'}" id="${l.badge}"></span>` : '';
+  return `<div class="nav-item" data-page="${l.id}" onclick="navTo('${l.id}')">${l.icon}<span>${l.label}</span>${badge}</div>`;
+}
+
+function navTo(page) {
+  if (!isAdmin && ['loan-approvals','all-loans','repayments','accounts','card-mgmt','collateral','analytics','credit-scores','blacklist','audit-log','settings'].includes(page)) return;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || 'LendHub';
+  closeSidebar();
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const pages = {
+    dashboard: renderDashboard, 'request-loan': renderRequestLoan, 'my-loans': renderMyLoans,
+    'my-card': renderMyCard, calculator: renderCalculator, 'risk-calc': renderRiskCalculator,
+    'loan-approvals': renderLoanApprovals, 'all-loans': renderAllLoans, accounts: renderAccounts,
+    'card-mgmt': renderCardMgmt, repayments: renderRepayments, collateral: renderCollateral,
+    analytics: renderAnalytics, 'credit-scores': renderCreditScores, blacklist: renderBlacklist,
+    'audit-log': renderAuditLog, settings: renderSettings
+  };
+  if (pages[page]) pages[page](content);
+}
+
+async function updatePendingBadge() {
+  if (!isAdmin) return;
+  const snap = await db.ref('loans').orderByChild('status').equalTo('pending').once('value');
+  const count = Object.keys(snap.val() || {}).length;
+  const el = document.getElementById('pending-count');
+  if (el) { el.textContent = count || ''; el.style.display = count ? '' : 'none'; }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+async function renderDashboard(el) {
+  const [loansSnap, usersSnap] = await Promise.all([
+    db.ref('loans').orderByChild('borrower').equalTo(user.username).once('value'),
+    isAdmin ? db.ref('users').once('value') : Promise.resolve({ val: () => null })
+  ]);
+  const myLoans = Object.values(loansSnap.val() || {});
+  const activeLoans = myLoans.filter(l => l.status === 'active' || l.status === 'approved');
+  const totalOwed = activeLoans.reduce((s, l) => s + (l.remaining || l.totalDue || 0), 0);
+
+  let adminStatsHtml = '';
+  if (isAdmin) {
+    const users = usersSnap.val() || {};
+    const totalUsers = Object.keys(users).length;
+    const totalBalance = Object.values(users).reduce((s, u) => s + (u.balance || 0), 0);
+    const allLoansSnap = await db.ref('loans').once('value');
+    const allLoans = Object.values(allLoansSnap.val() || {});
+    const pendingCount = allLoans.filter(l => l.status === 'pending').length;
+    const totalExposure = allLoans.filter(l => l.status === 'active').reduce((s, l) => s + (l.remaining || 0), 0);
+
+    adminStatsHtml = `
+      <div class="stat-card"><div class="stat-card-bar gold"></div>
+        <div class="stat-top"><div class="stat-icon gold">${usersIcon()}</div><span class="stat-change neutral">ADMIN</span></div>
+        <div class="stat-label">Total Accounts</div>
+        <div class="stat-value">${totalUsers}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-bar green"></div>
+        <div class="stat-top"><div class="stat-icon green">${coinIcon()}</div></div>
+        <div class="stat-label">Total Deposits</div>
+        <div class="stat-value" style="font-size:22px;">◆${fmtNum(totalBalance)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-bar red"></div>
+        <div class="stat-top"><div class="stat-icon red">${fileIcon()}</div>${pendingCount > 0 ? `<span class="stat-change down">⚠ ${pendingCount} pending</span>` : ''}</div>
+        <div class="stat-label">Loan Exposure</div>
+        <div class="stat-value" style="font-size:22px;">◆${fmtNum(totalExposure)}</div>
+      </div>`;
+  }
+
+  const recent = myLoans.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 4);
+  const txs = Object.values(user.transactions || {}).sort((a, b) => (b.timestamp || b.date || 0) > (a.timestamp || a.date || 0) ? 1 : -1).slice(0, 5);
+
+  el.innerHTML = `
+  <div class="fade-up">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-card-bar gold"></div>
+        <div class="stat-top"><div class="stat-icon gold">${coinIcon()}</div><span class="stat-change up">◆ Active</span></div>
+        <div class="stat-label">Account Balance</div>
+        <div class="stat-value" style="font-size:26px;">◆${fmtNum(user.balance || 0)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-bar blue"></div>
+        <div class="stat-top"><div class="stat-icon blue">${fileIcon()}</div></div>
+        <div class="stat-label">Active Loans</div>
+        <div class="stat-value">${activeLoans.length}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-bar red"></div>
+        <div class="stat-top"><div class="stat-icon red">${coinIcon()}</div></div>
+        <div class="stat-label">Total Owed</div>
+        <div class="stat-value" style="font-size:26px;">◆${fmtNum(totalOwed)}</div>
+      </div>
+      <div class="stat-card"><div class="stat-card-bar purple"></div>
+        <div class="stat-top"><div class="stat-icon purple">${starIcon()}</div><span class="stat-change neutral">${user.creditScore ? creditTier(user.creditScore).label : '—'}</span></div>
+        <div class="stat-label">Credit Score</div>
+        <div class="stat-value">${user.creditScore || '—'}<span style="font-size:14px;color:var(--text-40);font-family:'JetBrains Mono',monospace;">/1000</span></div>
+      </div>
+      ${adminStatsHtml}
+    </div>
+
+    <div class="two-col">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Quick Actions</h3></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button class="btn btn-gold" onclick="navTo('request-loan')" style="justify-content:center;">${plusIcon()} Request Loan</button>
+          <button class="btn btn-ghost" onclick="navTo('calculator')" style="justify-content:center;">${calcIcon()} Calculator</button>
+          <button class="btn btn-ghost" onclick="navTo('risk-calc')" style="justify-content:center;">${shieldIcon()} Risk Calc</button>
+          <button class="btn btn-ghost" onclick="navTo('my-card')" style="justify-content:center;">${cardIcon()} My Card</button>
+          ${isAdmin ? `<button class="btn btn-ghost" onclick="navTo('loan-approvals')" style="justify-content:center;">${checkIcon()} Approvals</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-ghost" onclick="navTo('analytics')" style="justify-content:center;">${chartIcon()} Analytics</button>` : ''}
+        </div>
+      </div>
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Recent Transactions</h3></div>
+        ${txs.length ? txs.map(tx => `
+          <div class="activity-item">
+            <div class="act-icon ${(tx.type === 'credit') ? 'green' : 'red'}" style="background:${tx.type==='credit'?'var(--em-10)':'var(--red-10)'};border:1px solid ${tx.type==='credit'?'var(--em-20)':'var(--red-20)'};">
+              ${tx.type === 'credit' ? plusIcon() : minusIcon()}
+            </div>
+            <div class="act-content">
+              <div class="act-title">${esc(tx.description || tx.type || 'Transaction')}</div>
+              <div class="act-time">${fmtDate(tx.date || tx.timestamp)}</div>
+            </div>
+            <div class="act-amount" style="color:${tx.type==='credit'?'var(--em-lt)':'var(--red)'}">${tx.type==='credit'?'+':'-'}◆${Math.abs(tx.amount||0).toFixed(2)}</div>
+          </div>`).join('') : `<div class="empty-state" style="padding:32px;">${fileIcon()}<p style="margin-top:10px;color:var(--text-40);">No transactions yet</p></div>`}
+      </div>
+    </div>
+
+    ${recent.length ? `<div class="box" style="margin-top:20px;">
+      <div class="box-head"><h3 class="box-title">Recent Loan Applications</h3><button class="btn btn-ghost btn-sm" onclick="navTo('my-loans')">View All →</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>ID</th><th>Amount</th><th>Rate</th><th>Total Due</th><th>Remaining</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>${recent.map(l => `<tr>
+          <td class="mono" style="font-size:11px;">${(l.id||'').slice(0,8).toUpperCase()}</td>
+          <td class="mono">◆${fmtNum(l.principal)}</td>
+          <td class="mono">${l.interestRate}%</td>
+          <td class="mono">◆${fmtNum(l.totalDue)}</td>
+          <td class="mono">◆${fmtNum(l.remaining||l.totalDue)}</td>
+          <td>${loanBadge(l.status)}</td>
+          <td style="color:var(--text-40);font-size:12px;">${fmtDate(l.createdAt)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>` : ''}
+  </div>`;
+  updateMyLoansBadge();
+}
+
+async function updateMyLoansBadge() {
+  const snap = await db.ref('loans').orderByChild('borrower').equalTo(user.username).once('value');
+  const count = Object.values(snap.val() || {}).filter(l => l.status === 'active').length;
+  const el = document.getElementById('my-loans-count');
+  if (el) { el.textContent = count || ''; el.style.display = count ? '' : 'none'; }
+}
+
+// ── REQUEST LOAN ──────────────────────────────────────────
+function renderRequestLoan(el) {
+  const score = user.creditScore || 0;
+  const balance = user.balance || 0;
+  const max = maxEligibleLoan(score, balance);
+  const tier = creditTier(score);
+
+  el.innerHTML = `<div class="fade-up">
+    <div class="two-col" style="align-items:start;">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">New Loan Application</h3></div>
+
+        ${score < 201 ? `
+          <div style="background:var(--red-10);border:1px solid var(--red-20);border-radius:var(--radius-sm);padding:20px;text-align:center;">
+            <div style="font-size:32px;font-weight:700;color:var(--red);margin-bottom:8px;">${score}/1000</div>
+            <div style="font-size:14px;color:var(--red);font-weight:700;margin-bottom:6px;">Credit Score Too Low</div>
+            <div style="font-size:13px;color:var(--text-40);">Your score is <strong>Defaulted tier</strong>. You must reach at least 201 to apply for loans. Repay existing debts to rebuild your score.</div>
+          </div>` : `
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="lbl">Amount (◆) — Max: ◆${fmtNum(max)}</label>
+            <input class="inp" id="la-amount" type="number" placeholder="1–${fmtNum(max)}" min="${settings.minLoanAmount}" max="${Math.min(max, settings.maxLoanAmount)}" oninput="previewLoan()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Card Type</label>
+            <select class="inp" id="la-type" onchange="previewLoan()">
+              <option value="credit">Credit — ${settings.creditInterestRate}% interest</option>
+              <option value="debit">Debit — ${settings.debitInterestRate}% interest</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Installments</label>
+            <input class="inp" id="la-inst" type="number" value="1" min="1" max="12" oninput="previewLoan()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Purpose</label>
+            <select class="inp" id="la-purpose">
+              <option value="business">Business</option>
+              <option value="personal">Personal</option>
+              <option value="emergency">Emergency</option>
+              <option value="investment">Investment</option>
+              <option value="equipment">Equipment</option>
+            </select>
+          </div>
+          <div class="form-field" style="grid-column:1/-1;">
+            <label class="lbl">Notes (Optional)</label>
+            <input class="inp" id="la-notes" placeholder="Provide context for your request...">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-gold" onclick="submitLoan()">
+            ${plusIcon()} Submit Application
+          </button>
+        </div>`}
+      </div>
+      <div>
+        <div class="box" style="margin-bottom:16px;">
+          <div class="box-head"><h3 class="box-title">Your Credit Profile</h3></div>
+          <div style="text-align:center;padding:8px 0 16px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;line-height:1;color:${score>=751?'var(--em-lt)':score>=501?'var(--gold)':score>=351?'var(--amber)':'var(--red)'};">${score}</div>
+            <div style="font-size:12px;color:var(--text-40);margin:4px 0 10px;font-family:'JetBrains Mono',monospace;">/ 1000</div>
+            <span class="badge ${tier.cls}">${tier.label}</span>
+          </div>
+          <div class="progress-track" style="margin:0 0 16px;"><div class="progress-fill ${score>=751?'green':score>=501?'gold':'red'}" style="width:${Math.min(100,(score/1000)*100)}%"></div></div>
+          <div class="info-row"><span class="info-key">Your Balance</span><span class="info-val">◆${fmtNum(balance)}</span></div>
+          <div class="info-row"><span class="info-key">Max Loan Amount</span><span class="info-val" style="color:${max>0?'var(--em-lt)':'var(--red)'};">${max>0?'◆'+fmtNum(max):'Not Eligible'}</span></div>
+          <div class="info-row"><span class="info-key">Next Tier</span><span class="info-val">${nextTierText(score)}</span></div>
+        </div>
+        <div class="box" id="loan-preview">
+          <div class="box-head"><h3 class="box-title">Preview</h3></div>
+          <p style="color:var(--text-40);font-size:14px;">Enter an amount to preview.</p>
+        </div>
+        <div style="margin-top:16px;" id="eligibility-check">${eligibilityHtml(score, balance, 0)}</div>
+      </div>
+    </div>
+    <div class="box" style="margin-top:20px;">
+      <div class="box-head"><h3 class="box-title">Credit Score Tier Table</h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Range</th><th>Tier</th><th>Max Loan Amount</th><th>Balance Multiplier</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">951–1000</td><td><span class="badge badge-gold">Elite</span></td><td class="mono">◆ Unlimited</td><td class="mono">10×</td></tr>
+          <tr><td class="mono">851–950</td><td><span class="badge badge-green">Excellent</span></td><td class="mono">◆50,000 cap</td><td class="mono">6×</td></tr>
+          <tr><td class="mono">751–850</td><td><span class="badge badge-blue">Very Good</span></td><td class="mono">◆20,000 cap</td><td class="mono">4×</td></tr>
+          <tr><td class="mono">651–750</td><td><span class="badge badge-gold">Good</span></td><td class="mono">◆10,000 cap</td><td class="mono">3×</td></tr>
+          <tr><td class="mono">501–650</td><td><span class="badge badge-gold">Fair</span></td><td class="mono">◆5,000 cap</td><td class="mono">2×</td></tr>
+          <tr><td class="mono">351–500</td><td><span class="badge badge-red">Poor</span></td><td class="mono">◆2,000 cap</td><td class="mono">1×</td></tr>
+          <tr><td class="mono">201–350</td><td><span class="badge badge-red">Very Poor</span></td><td class="mono">◆500 cap</td><td class="mono">0.5×</td></tr>
+          <tr><td class="mono">1–200</td><td><span class="badge badge-red">Defaulted</span></td><td colspan="2" style="color:var(--red);">Not Eligible — Cannot Apply</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function nextTierText(score) {
+  if (score >= 951) return '<span style="color:var(--gold)">Max tier reached</span>';
+  const tiers = [[951,'Elite'],[851,'Excellent'],[751,'Very Good'],[651,'Good'],[501,'Fair'],[351,'Poor'],[201,'Very Poor']];
+  for (const [thresh, name] of tiers) {
+    if (score < thresh) return `${thresh - score} pts to <strong>${name}</strong>`;
+  }
+  return 'Keep improving';
+}
+
+function previewLoan() {
+  const amt = parseFloat(document.getElementById('la-amount')?.value) || 0;
+  const type = document.getElementById('la-type')?.value || 'credit';
+  const inst = parseInt(document.getElementById('la-inst')?.value) || 1;
+  if (!amt) return;
+  const rate = type === 'credit' ? settings.creditInterestRate : settings.debitInterestRate;
+  const interest = amt * (rate / 100);
+  const total = amt + interest;
+  const perInst = total / inst;
+  const previewEl = document.getElementById('loan-preview');
+  if (previewEl) previewEl.innerHTML = `
+    <div class="box-head"><h3 class="box-title">Loan Preview</h3></div>
+    <div class="info-row"><span class="info-key">Principal</span><span class="info-val">◆${fmtNum(amt)}</span></div>
+    <div class="info-row"><span class="info-key">Interest Rate</span><span class="info-val">${rate}%</span></div>
+    <div class="info-row"><span class="info-key">Interest Amount</span><span class="info-val" style="color:var(--red);">◆${fmtNum(interest)}</span></div>
+    <div class="info-row"><span class="info-key">Total Due</span><span class="info-val" style="color:var(--gold);font-size:18px;">◆${fmtNum(total)}</span></div>
+    <div class="info-row"><span class="info-key">Installments</span><span class="info-val">${inst}x</span></div>
+    <div class="info-row"><span class="info-key">Per Installment</span><span class="info-val">◆${fmtNum(perInst)}</span></div>`;
+  const eligEl = document.getElementById('eligibility-check');
+  if (eligEl) eligEl.innerHTML = eligibilityHtml(user.creditScore || 0, user.balance || 0, amt);
+}
+
+async function submitLoan() {
+  const amount = parseFloat(document.getElementById('la-amount')?.value);
+  if (!amount || isNaN(amount) || amount <= 0) { toast('Enter a valid loan amount.', 'error'); return; }
+
+  // ── Credit score eligibility gate ────────────────────────
+  const score = user.creditScore || 0;
+  const balance = user.balance || 0;
+  const maxAllowed = maxEligibleLoan(score, balance);
+
+  if (score < 201) {
+    toast(`Your credit score (${score}/1000) is Defaulted tier. You cannot apply for loans.`, 'error'); return;
+  }
+  if (maxAllowed <= 0) {
+    toast(`You are not eligible for loans at your current credit score (${score}/1000).`, 'error'); return;
+  }
+  if (amount > maxAllowed) {
+    toast(`Amount ◆${fmtNum(amount)} exceeds your max eligible loan of ◆${fmtNum(maxAllowed)} (score: ${score}/1000).`, 'error'); return;
+  }
+  if (amount < settings.minLoanAmount) {
+    toast(`Minimum loan amount is ◆${fmtNum(settings.minLoanAmount)}.`, 'error'); return;
+  }
+
+  const cardType = document.getElementById('la-type').value;
+  const installments = parseInt(document.getElementById('la-inst').value) || 1;
+  const purpose = document.getElementById('la-purpose').value;
+  const notes = document.getElementById('la-notes').value;
+  const rate = cardType === 'credit' ? settings.creditInterestRate : settings.debitInterestRate;
+  const interest = amount * (rate / 100);
+  const total = amount + interest;
+  const schedule = Array.from({ length: installments }, (_, i) => ({
+    installment: i + 1, amount: total / installments, paid: false
+  }));
+
+  await db.ref('loans').push({
+    borrower: user.username, principal: amount, interestRate: rate,
+    interestAmount: interest, totalDue: total, remaining: total,
+    installments, paidInstallments: 0, schedule, cardType, purpose, notes,
+    status: 'pending', creditScoreAtApply: score, createdAt: Date.now()
+  });
+  await logAudit('LOAN_REQUEST', `${user.username} requested ◆${fmtNum(amount)} loan (score: ${score}/1000)`);
+  toast('Application submitted! Awaiting admin approval.', 'success');
+  navTo('my-loans');
+}
+
+// ── MY LOANS ──────────────────────────────────────────────
+async function renderMyLoans(el) {
+  const snap = await db.ref('loans').orderByChild('borrower').equalTo(user.username).once('value');
+  const loans = Object.entries(snap.val() || {}).map(([id, l]) => ({ id, ...l })).reverse();
+  if (!loans.length) {
+    el.innerHTML = `<div class="fade-up box"><div class="empty-state">${fileIcon()}<h3>No loans yet</h3><p>Apply for your first loan to get started.</p><button class="btn btn-gold" style="margin-top:16px;" onclick="navTo('request-loan')">${plusIcon()} Apply Now</button></div></div>`; return;
+  }
+  el.innerHTML = `<div class="fade-up"><div class="box">
+    <div class="box-head"><h3 class="box-title">Your Loan Applications</h3></div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>ID</th><th>Amount</th><th>Interest</th><th>Total</th><th>Remaining</th><th>Installments</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>${loans.map(l => {
+        const pct = l.totalDue > 0 ? Math.min(100, ((l.totalDue - (l.remaining || l.totalDue)) / l.totalDue) * 100) : 0;
+        return `<tr>
+          <td class="mono" style="font-size:11px;color:var(--text-40);">${l.id.slice(0,8).toUpperCase()}</td>
+          <td class="mono">◆${fmtNum(l.principal)}</td>
+          <td class="mono">${l.interestRate}%</td>
+          <td class="mono">◆${fmtNum(l.totalDue)}</td>
+          <td><div style="display:flex;align-items:center;gap:8px;"><span class="mono">◆${fmtNum(l.remaining||l.totalDue)}</span><div class="progress-track" style="width:60px;"><div class="progress-fill gold" style="width:${pct}%"></div></div></div></td>
+          <td class="mono">${l.paidInstallments||0}/${l.installments||1}</td>
+          <td>${loanBadge(l.status)}</td>
+          <td style="color:var(--text-40);font-size:12px;">${fmtDate(l.createdAt)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div></div>`;
+}
+
+// ── MY CARD ───────────────────────────────────────────────
+function renderMyCard(el) {
+  if (!user.cardNumber) {
+    el.innerHTML = `<div class="fade-up box"><div class="empty-state">${cardIcon()}<h3>No card issued</h3><p>Contact your administrator to request a card.</p></div></div>`; return;
+  }
+  const frozen = user.cardFrozen || user.frozen || false;
+  el.innerHTML = `<div class="fade-up two-col" style="align-items:start;">
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">Your ${esc(user.cardType || 'Credit')} Card</h3>
+        <button class="btn btn-gold" onclick="openMyCardModal()">${cardIcon()} View Full Card</button>
+      </div>
+      ${frozen ? `<div style="background:var(--red-10);border:1px solid var(--red-20);border-radius:var(--radius-sm);padding:14px 18px;color:var(--red);font-size:13px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;">${banIcon()} Your card is currently <strong>FROZEN</strong>. Contact admin to unfreeze.</div>` : ''}
+      <div class="info-row"><span class="info-key">Card Number</span><span class="info-val">•••• •••• •••• ${(user.cardNumber||'').replace(/\s/g,'').slice(-4)}</span></div>
+      <div class="info-row"><span class="info-key">Card Type</span><span class="info-val">${esc(user.cardType||'—')}</span></div>
+      <div class="info-row"><span class="info-key">Expiry</span><span class="info-val">${esc(user.expiry||user.cardExpiry||'—')}</span></div>
+      <div class="info-row"><span class="info-key">Credit Limit</span><span class="info-val">◆${fmtNum(user.creditLimit||user.limit||0)}</span></div>
+      <div class="info-row"><span class="info-key">Status</span><span class="info-val">${frozen ? '<span class="badge badge-red">Frozen</span>' : '<span class="badge badge-green">Active</span>'}</span></div>
+    </div>
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">Limits & Rates</h3></div>
+      <div class="info-row"><span class="info-key">Interest Rate</span><span class="info-val">${user.cardType === 'credit' ? settings.creditInterestRate : settings.debitInterestRate}%</span></div>
+      <div class="info-row"><span class="info-key">Card Holder</span><span class="info-val">${user.username.toUpperCase()}</span></div>
+      <div class="info-row"><span class="info-key">Account Number</span><span class="info-val">${esc(user.accountNumber||'—')}</span></div>
+    </div>
+  </div>`;
+}
+
+function openMyCardModal() {
+  document.getElementById('card-modal-title').textContent = `Your ${user.cardType || 'Credit'} Card`;
+  document.getElementById('card-cvv-num').textContent = user.cvv || '•••';
+  document.getElementById('card-front').innerHTML = buildCardSVG(user.username, user.cardNumber, user.expiry || user.cardExpiry, user.cardFrozen || user.frozen);
+  document.getElementById('card-modal-details').innerHTML = `
+    <div class="info-row"><span class="info-key">Full Number</span><span class="info-val">${esc(user.cardNumber||'—')}</span></div>
+    <div class="info-row"><span class="info-key">Expiry</span><span class="info-val">${esc(user.expiry||user.cardExpiry||'—')}</span></div>`;
+  openModal('modal-card');
+}
+
+// ── CALCULATOR ────────────────────────────────────────────
+function renderCalculator(el) {
+  el.innerHTML = `<div class="fade-up">
+    <div class="two-col" style="align-items:start;">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Loan Calculator</h3></div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="lbl">Principal (◆)</label>
+            <input class="inp" id="cl-amount" type="number" placeholder="1000" oninput="calcUpdate()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Card Type</label>
+            <select class="inp" id="cl-type" onchange="calcUpdate()">
+              <option value="credit">Credit — ${settings.creditInterestRate}%</option>
+              <option value="debit">Debit — ${settings.debitInterestRate}%</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Installments</label>
+            <input class="inp" id="cl-inst" type="number" value="1" min="1" max="24" oninput="calcUpdate()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Custom Rate (% override)</label>
+            <input class="inp" id="cl-rate" type="number" step=".1" placeholder="Leave blank for default" oninput="calcUpdate()">
+          </div>
+        </div>
+      </div>
+      <div class="box" id="calc-result">
+        <div class="box-head"><h3 class="box-title">Results</h3></div>
+        <p style="color:var(--text-40);font-size:14px;">Enter values to calculate.</p>
+      </div>
+    </div>
+    <div class="box" id="calc-schedule" style="margin-top:20px;display:none;">
+      <div class="box-head"><h3 class="box-title">Repayment Schedule</h3></div>
+      <div id="schedule-rows"></div>
+    </div>
+  </div>`;
+}
+
+function calcUpdate() {
+  const amt = parseFloat(document.getElementById('cl-amount')?.value) || 0;
+  const type = document.getElementById('cl-type')?.value || 'credit';
+  const inst = parseInt(document.getElementById('cl-inst')?.value) || 1;
+  const customRate = parseFloat(document.getElementById('cl-rate')?.value);
+  const rate = isNaN(customRate) ? (type === 'credit' ? settings.creditInterestRate : settings.debitInterestRate) : customRate;
+  if (!amt) return;
+  const interest = amt * (rate / 100);
+  const total = amt + interest;
+  const perInst = total / inst;
+  document.getElementById('calc-result').innerHTML = `
+    <div class="box-head"><h3 class="box-title">Results</h3></div>
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0;">
+      <div class="stat-card"><div class="stat-label">Principal</div><div class="stat-value" style="font-size:22px;">◆${fmtNum(amt)}</div></div>
+      <div class="stat-card"><div class="stat-label">Interest (${rate}%)</div><div class="stat-value" style="font-size:22px;color:var(--red);">◆${fmtNum(interest)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Due</div><div class="stat-value" style="font-size:22px;color:var(--gold);">◆${fmtNum(total)}</div></div>
+      <div class="stat-card"><div class="stat-label">Per Installment</div><div class="stat-value" style="font-size:22px;">◆${fmtNum(perInst)}</div></div>
+    </div>`;
+  const sched = document.getElementById('calc-schedule');
+  sched.style.display = '';
+  document.getElementById('schedule-rows').innerHTML = Array.from({ length: inst }, (_, i) => `
+    <div class="repay-row">
+      <span class="repay-num">#${i + 1}</span>
+      <span class="mono" style="font-size:13px;">◆${fmtNum(perInst)}</span>
+      <span style="font-size:12px;color:var(--text-40);">◆${fmtNum(amt / inst)} principal</span>
+      <span style="font-size:12px;color:var(--red);">◆${fmtNum(interest / inst)} interest</span>
+      <span class="badge badge-gray">Pending</span>
+    </div>`).join('');
+}
+
+// ── RISK CALCULATOR ───────────────────────────────────────
+async function renderRiskCalculator(el) {
+  const allUsersSnap = isAdmin ? await db.ref('users').once('value') : null;
+  const userList = allUsersSnap ? Object.keys(allUsersSnap.val() || {}) : [user.username];
+
+  el.innerHTML = `<div class="fade-up">
+    <div class="two-col" style="align-items:start;">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Risk Assessment Engine</h3></div>
+        <p style="font-size:13px;color:var(--text-40);margin-bottom:20px;">Analyze loan risk based on financial profile. Lower score = higher risk.</p>
+        ${isAdmin ? `<div class="form-field" style="margin-bottom:16px;">
+          <label class="lbl">Assess User</label>
+          <select class="inp" id="rc-user" onchange="rcFillUser()">
+            ${userList.map(u => `<option value="${u}" ${u === user.username ? 'selected' : ''}>${u}</option>`).join('')}
+          </select>
+        </div>` : ''}
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="lbl">Loan Amount (◆)</label>
+            <input class="inp" id="rc-amount" type="number" placeholder="Requested amount" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Account Balance (◆)</label>
+            <input class="inp" id="rc-balance" type="number" value="${user.balance || 0}" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Credit Score</label>
+            <input class="inp" id="rc-score" type="number" value="${user.creditScore || 500}" min="1" max="1000" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Existing Debt (◆)</label>
+            <input class="inp" id="rc-debt" type="number" value="0" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Loan Purpose</label>
+            <select class="inp" id="rc-purpose" onchange="runRiskCalc()">
+              <option value="business">Business</option>
+              <option value="investment">Investment</option>
+              <option value="personal">Personal</option>
+              <option value="emergency">Emergency</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Past Defaults</label>
+            <input class="inp" id="rc-defaults" type="number" value="0" min="0" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Paid Loans (history)</label>
+            <input class="inp" id="rc-paid" type="number" value="0" min="0" oninput="runRiskCalc()">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Account Age (days)</label>
+            <input class="inp" id="rc-age" type="number" value="30" min="0" oninput="runRiskCalc()">
+          </div>
+        </div>
+      </div>
+      <div id="rc-result" class="box">
+        <div class="box-head"><h3 class="box-title">Risk Profile</h3></div>
+        <p style="color:var(--text-40);font-size:14px;">Fill in the loan details to generate a risk assessment.</p>
+      </div>
+    </div>
+  </div>`;
+
+  if (isAdmin) await rcFillUser();
+}
+
+async function rcFillUser() {
+  const selEl = document.getElementById('rc-user');
+  if (!selEl) return;
+  const uname = selEl.value;
+  try {
+    const snap = await db.ref('users/' + uname).once('value');
+    const u = snap.val() || {};
+    const loansSnap = await db.ref('loans').orderByChild('borrower').equalTo(uname).once('value');
+    const loans = Object.values(loansSnap.val() || {});
+    const activeDebt = loans.filter(l => l.status === 'active').reduce((s, l) => s + (l.remaining || 0), 0);
+    const defaults = loans.filter(l => l.status === 'denied' || l.status === 'defaulted').length;
+    const paidCount = loans.filter(l => l.status === 'paid' || l.paidInstallments >= l.installments).length;
+    if (document.getElementById('rc-balance')) document.getElementById('rc-balance').value = u.balance || 0;
+    if (document.getElementById('rc-score')) document.getElementById('rc-score').value = u.creditScore || 500;
+    if (document.getElementById('rc-debt')) document.getElementById('rc-debt').value = activeDebt.toFixed(2);
+    if (document.getElementById('rc-defaults')) document.getElementById('rc-defaults').value = defaults;
+    if (document.getElementById('rc-paid')) document.getElementById('rc-paid').value = paidCount;
+    runRiskCalc();
+  } catch (e) {}
+}
+
+function runRiskCalc() {
+  const amount = parseFloat(document.getElementById('rc-amount')?.value) || 0;
+  const balance = parseFloat(document.getElementById('rc-balance')?.value) || 0;
+  const creditScore = parseFloat(document.getElementById('rc-score')?.value) || 500;
+  const debt = parseFloat(document.getElementById('rc-debt')?.value) || 0;
+  const purpose = document.getElementById('rc-purpose')?.value || 'personal';
+  const defaults = parseInt(document.getElementById('rc-defaults')?.value) || 0;
+  const paidLoans = parseInt(document.getElementById('rc-paid')?.value) || 0;
+  const age = parseInt(document.getElementById('rc-age')?.value) || 0;
+
+  const factors = computeRisk(amount, balance, creditScore, debt, purpose, defaults, paidLoans, age);
+  const total = Object.values(factors).reduce((s, f) => s + f.score, 0);
+  const maxPts = Object.values(factors).reduce((s, f) => s + f.max, 0);
+  const pct = Math.round((total / maxPts) * 100);
+
+  let verdict = 'HIGH RISK', verdictCls = 'high', color = 'var(--red)';
+  if (pct >= 70) { verdict = 'LOW RISK'; verdictCls = 'low'; color = 'var(--em-lt)'; }
+  else if (pct >= 45) { verdict = 'MEDIUM RISK'; verdictCls = 'medium'; color = 'var(--amber)'; }
+
+  const recommend = pct >= 70
+    ? '✓ Recommend APPROVAL. Low default probability.'
+    : pct >= 45
+    ? '⚠ Review carefully. Moderate risk factors present.'
+    : '✗ Recommend CAUTION or DENIAL. High risk indicators.';
+
+  const tier = creditTier(creditScore);
+  const maxLoan = maxEligibleLoan(creditScore, balance);
+  const eligibleForAmount = amount > 0 ? amount <= maxLoan && maxLoan > 0 : maxLoan > 0;
+  const scoreColor = creditScore >= 751 ? 'var(--em-lt)' : creditScore >= 651 ? 'var(--blue)' : creditScore >= 501 ? 'var(--gold)' : creditScore >= 351 ? 'var(--amber)' : 'var(--red)';
+
+  document.getElementById('rc-result').innerHTML = `
+    <div class="box-head"><h3 class="box-title">Risk Profile</h3>${amount > 0 ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-40);">◆${fmtNum(amount)}</span>` : ''}</div>
+
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:72px;font-weight:700;line-height:1;color:${color};">${pct}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-40);margin-bottom:10px;">/ 100 Risk Score</div>
+      <span class="risk-verdict ${verdictCls}">${verdict}</span>
+    </div>
+
+    <div style="background:${pct>=70?'var(--em-10)':pct>=45?'var(--amb-10)':'var(--red-10)'};border:1px solid ${pct>=70?'var(--em-20)':pct>=45?'var(--amb-20)':'var(--red-20)'};border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px;">
+      ${recommend}
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:10px;font-family:'JetBrains Mono',monospace;">Credit Eligibility</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:${scoreColor};">${creditScore}<span style="font-size:14px;color:var(--text-40);">/1000</span></div>
+            <span class="badge ${tier.cls}">${tier.label}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-60);">Max Eligible Loan: <strong style="color:${maxLoan>0?'var(--em-lt)':'var(--red)'};">${maxLoan>0?'◆'+fmtNum(maxLoan):'Not Eligible'}</strong></div>
+        </div>
+        <div style="text-align:right;">
+          ${amount > 0 ? `<div style="font-size:13px;font-weight:700;color:${eligibleForAmount?'var(--em-lt)':'var(--red)'};">${eligibleForAmount ? '✓ Amount within limit' : '✗ Amount exceeds limit'}</div>` : ''}
+          ${creditScore < 201 ? `<div style="font-size:12px;color:var(--red);">Cannot apply for loans</div>` : ''}
+        </div>
+      </div>
+      <div style="height:5px;background:var(--surface3);border-radius:3px;margin-top:10px;overflow:hidden;">
+        <div style="width:${Math.min(100,(creditScore/1000)*100)}%;height:100%;background:${scoreColor};border-radius:3px;transition:width .4s ease;"></div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:12px;font-family:'JetBrains Mono',monospace;">Factor Breakdown</div>
+
+    ${Object.entries(factors).map(([key, f]) => {
+      const fpct = f.max > 0 ? (f.score / f.max) * 100 : 0;
+      const fcolor = fpct >= 70 ? 'var(--em-lt)' : fpct >= 40 ? 'var(--amber)' : 'var(--red)';
+      return `<div class="risk-bar-row">
+        <span class="risk-bar-label">${f.label}</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${fpct}%;background:${fcolor};"></div></div>
+        <span class="risk-bar-score" style="color:${fcolor};">${f.score}/${f.max}</span>
+      </div>`;
+    }).join('')}`;
+}
+
+function computeRisk(amount, balance, creditScore, debt, purpose, defaults, paidLoans, age) {
+  const factors = {};
+
+  // Credit Score factor (0–25)
+  const cscore = Math.min(25, Math.round((creditScore / 1000) * 25));
+  factors.creditScore = { label: 'Credit Score', score: cscore, max: 25 };
+
+  // Loan-to-Balance ratio (0–20)
+  let ltb = 20;
+  if (amount > 0 && balance > 0) {
+    const ratio = amount / balance;
+    if (ratio > 5) ltb = 0;
+    else if (ratio > 3) ltb = 5;
+    else if (ratio > 2) ltb = 10;
+    else if (ratio > 1) ltb = 15;
+    else ltb = 20;
+  } else if (amount > 0 && balance === 0) { ltb = 0; }
+  factors.loanToBalance = { label: 'Loan-to-Balance Ratio', score: ltb, max: 20 };
+
+  // Existing Debt Burden (0–20)
+  let debtScore = 20;
+  if (debt > 0) {
+    const dRatio = (debt + amount) / Math.max(balance, 1);
+    if (dRatio > 10) debtScore = 0;
+    else if (dRatio > 5) debtScore = 5;
+    else if (dRatio > 2) debtScore = 12;
+    else debtScore = 20;
+  }
+  factors.debtBurden = { label: 'Existing Debt Burden', score: debtScore, max: 20 };
+
+  // Payment History (0–20)
+  const totalHistory = paidLoans + defaults;
+  let histScore = 10;
+  if (totalHistory === 0) histScore = 10;
+  else {
+    const paidRatio = paidLoans / totalHistory;
+    histScore = Math.round(paidRatio * 20);
+  }
+  histScore = Math.max(0, histScore - (defaults * 4));
+  factors.paymentHistory = { label: 'Payment History', score: Math.max(0, Math.min(20, histScore)), max: 20 };
+
+  // Purpose Risk (0–10)
+  const purposeScores = { business: 10, investment: 8, personal: 7, emergency: 5, unknown: 2 };
+  factors.loanPurpose = { label: 'Loan Purpose', score: purposeScores[purpose] || 5, max: 10 };
+
+  // Account Age (0–5)
+  const ageScore = age >= 90 ? 5 : age >= 30 ? 3 : age >= 7 ? 1 : 0;
+  factors.accountAge = { label: 'Account Tenure', score: ageScore, max: 5 };
+
+  return factors;
+}
+
+// ── LOAN APPROVALS (Admin) ────────────────────────────────
+async function renderLoanApprovals(el) {
+  const snap = await db.ref('loans').orderByChild('status').equalTo('pending').once('value');
+  const loans = Object.entries(snap.val() || {}).map(([id, l]) => ({ id, ...l })).reverse();
+  updatePendingBadge();
+  if (!loans.length) {
+    el.innerHTML = `<div class="fade-up box"><div class="empty-state">${checkIcon()}<h3>All caught up!</h3><p>No pending loan applications.</p></div></div>`; return;
+  }
+  el.innerHTML = `<div class="fade-up"><div class="box">
+    <div class="box-head"><h3 class="box-title">Pending Applications <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-40);">${loans.length}</span></h3></div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Borrower</th><th>Amount</th><th>Rate</th><th>Total</th><th>Purpose</th><th>Credit Score</th><th>Risk</th><th>Requested</th><th>Actions</th></tr></thead>
+      <tbody>${await Promise.all(loans.map(async l => {
+        const userSnap = await db.ref('users/' + l.borrower).once('value');
+        const u = userSnap.val() || {};
+        const loansSnap = await db.ref('loans').orderByChild('borrower').equalTo(l.borrower).once('value');
+        const userLoans = Object.values(loansSnap.val() || {});
+        const debt = userLoans.filter(x => x.status === 'active').reduce((s, x) => s + (x.remaining || 0), 0);
+        const defaults = userLoans.filter(x => x.status === 'denied').length;
+        const paid = userLoans.filter(x => x.status === 'paid').length;
+        const riskFactors = computeRisk(l.principal, u.balance || 0, u.creditScore || 500, debt, l.purpose || 'personal', defaults, paid, 30);
+        const riskScore = Math.round((Object.values(riskFactors).reduce((s, f) => s + f.score, 0) / Object.values(riskFactors).reduce((s, f) => s + f.max, 0)) * 100);
+        const riskCls = riskScore >= 70 ? 'badge-green' : riskScore >= 45 ? 'badge-gold' : 'badge-red';
+        const uScore = u.creditScore || 0;
+        const uTier = creditTier(uScore);
+        const maxLoan = maxEligibleLoan(uScore, u.balance || 0);
+        const withinElig = l.principal <= maxLoan && maxLoan > 0;
+        return `<tr>
+          <td><strong>${esc(l.borrower)}</strong><div style="font-size:11px;color:var(--text-40);">◆${fmtNum(u.balance || 0)} balance</div></td>
+          <td class="mono">◆${fmtNum(l.principal)}</td>
+          <td class="mono">${l.interestRate}%</td>
+          <td class="mono">◆${fmtNum(l.totalDue)}</td>
+          <td><span class="badge badge-blue">${esc(l.purpose||'—')}</span></td>
+          <td>
+            <span class="badge ${uTier.cls}">${uScore}/1000</span>
+            <div style="font-size:11px;margin-top:3px;color:${withinElig?'var(--em-lt)':'var(--red)'};">${withinElig?'✓ Within limit':'✗ Exceeds limit'}</div>
+          </td>
+          <td><span class="badge ${riskCls}">${riskScore}/100</span></td>
+          <td style="font-size:12px;color:var(--text-40);">${fmtDate(l.createdAt)}</td>
+          <td><div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-xs" onclick="openApproveModal('${l.id}', ${JSON.stringify(l).replace(/"/g,'&quot;')})">Review</button>
+            <button class="btn btn-success btn-xs" onclick="approveLoan('${l.id}')">✓</button>
+            <button class="btn btn-danger btn-xs" onclick="denyLoan('${l.id}')">✕</button>
+          </div></td>
+        </tr>`;
+      })).then(rows => rows.join(''))}</tbody>
+    </table></div>
+  </div></div>`;
+}
+
+async function openApproveModal(id, loan) {
+  const userSnap = await db.ref('users/' + loan.borrower).once('value');
+  const u = userSnap.val() || {};
+  const loansSnap = await db.ref('loans').orderByChild('borrower').equalTo(loan.borrower).once('value');
+  const userLoans = Object.values(loansSnap.val() || {});
+  const debt = userLoans.filter(x => x.status === 'active').reduce((s, x) => s + (x.remaining || 0), 0);
+  const defaults = userLoans.filter(x => x.status === 'denied').length;
+  const paid = userLoans.filter(x => x.status === 'paid').length;
+  const rf = computeRisk(loan.principal, u.balance || 0, u.creditScore || 500, debt, loan.purpose || 'personal', defaults, paid, 30);
+  const riskScore = Math.round((Object.values(rf).reduce((s, f) => s + f.score, 0) / Object.values(rf).reduce((s, f) => s + f.max, 0)) * 100);
+  const riskColor = riskScore >= 70 ? 'var(--em-lt)' : riskScore >= 45 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('approve-borrower-line').textContent = `Borrower: ${loan.borrower} — ◆${fmtNum(loan.principal)} request`;
+  const uScore = u.creditScore || 0;
+  const uTierObj = creditTier(uScore);
+  const uTierLabel = uTierObj.label;
+  const uTierBadge = uTierObj.cls;
+  const uMaxLoan = maxEligibleLoan(uScore, u.balance || 0);
+  document.getElementById('approve-content').innerHTML = `
+    <div class="two-col" style="margin-bottom:20px;">
+      <div>
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:14px;font-family:'JetBrains Mono',monospace;">Loan Details</div>
+        <div class="info-row"><span class="info-key">Principal</span><span class="info-val">◆${fmtNum(loan.principal)}</span></div>
+        <div class="info-row"><span class="info-key">Interest (${loan.interestRate}%)</span><span class="info-val">◆${fmtNum(loan.interestAmount)}</span></div>
+        <div class="info-row"><span class="info-key">Total Due</span><span class="info-val" style="color:var(--gold);">◆${fmtNum(loan.totalDue)}</span></div>
+        <div class="info-row"><span class="info-key">Installments</span><span class="info-val">${loan.installments}</span></div>
+        <div class="info-row"><span class="info-key">Purpose</span><span class="info-val">${esc(loan.purpose||'—')}</span></div>
+        ${loan.notes ? `<div class="info-row"><span class="info-key">Notes</span><span class="info-val" style="max-width:180px;">${esc(loan.notes)}</span></div>` : ''}
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:14px;font-family:'JetBrains Mono',monospace;">Borrower Profile</div>
+        <div class="info-row"><span class="info-key">Balance</span><span class="info-val">◆${fmtNum(u.balance || 0)}</span></div>
+        <div class="info-row"><span class="info-key">Credit Score</span><span class="info-val"><strong style="color:${uScore>=751?'var(--em-lt)':uScore>=501?'var(--gold)':uScore>=351?'var(--amber)':'var(--red)'};">${uScore}/1000</strong> <span class="badge ${uTierBadge}" style="margin-left:6px;">${uTierLabel}</span></span></div>
+        <div class="info-row"><span class="info-key">Max Eligible Loan</span><span class="info-val" style="color:${uMaxLoan>0?'var(--em-lt)':'var(--red)'};">${uMaxLoan>0?'◆'+fmtNum(uMaxLoan):'Not Eligible'}</span></div>
+        <div class="info-row"><span class="info-key">Loan vs Eligibility</span><span class="info-val" style="color:${loan.principal<=uMaxLoan&&uMaxLoan>0?'var(--em-lt)':'var(--red)'};">${loan.principal<=uMaxLoan&&uMaxLoan>0?'✓ Within Limit':'✗ Exceeds Limit'}</span></div>
+        <div class="info-row"><span class="info-key">Active Debt</span><span class="info-val" style="color:var(--red);">◆${fmtNum(debt)}</span></div>
+        <div class="info-row"><span class="info-key">Past Defaults</span><span class="info-val">${defaults}</span></div>
+        <div class="info-row"><span class="info-key">Paid Loans</span><span class="info-val">${paid}</span></div>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;color:${riskColor};line-height:1;">${riskScore}</div>
+        <div style="font-size:12px;color:var(--text-40);margin-bottom:8px;">Risk Score / 100</div>
+        <span class="risk-verdict ${riskScore>=70?'low':riskScore>=45?'medium':'high'}">${riskScore>=70?'LOW RISK':riskScore>=45?'MEDIUM RISK':'HIGH RISK'}</span>
+      </div>
+      ${Object.entries(rf).map(([k,f]) => {
+        const fp = f.max > 0 ? (f.score / f.max) * 100 : 0;
+        const fc = fp >= 70 ? 'var(--em-lt)' : fp >= 40 ? 'var(--amber)' : 'var(--red)';
+        return `<div class="risk-bar-row"><span class="risk-bar-label">${f.label}</span><div class="risk-bar-track"><div class="risk-bar-fill" style="width:${fp}%;background:${fc};"></div></div><span class="risk-bar-score" style="color:${fc};">${f.score}/${f.max}</span></div>`;
+      }).join('')}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-danger" onclick="denyLoan('${id}');closeModal('modal-approve');">✕ Deny Application</button>
+      <button class="btn btn-success" onclick="approveLoan('${id}');closeModal('modal-approve');">✓ Approve & Disburse ◆${fmtNum(loan.principal)}</button>
+    </div>`;
+  openModal('modal-approve');
+}
+
+async function approveLoan(id) {
+  const snap = await db.ref('loans/' + id).once('value');
+  const loan = snap.val();
+  if (!loan) { toast('Loan not found', 'error'); return; }
+  const userSnap = await db.ref('users/' + loan.borrower).once('value');
+  const u = userSnap.val() || {};
+  const newBalance = (u.balance || 0) + loan.principal;
+  const tx = { description: `Loan disbursement ◆${fmtNum(loan.principal)}`, amount: loan.principal, type: 'credit', date: new Date().toISOString() };
+  await db.ref('loans/' + id).update({ status: 'active', approvedAt: Date.now(), approvedBy: user.username });
+  await db.ref('users/' + loan.borrower + '/balance').set(newBalance);
+  await db.ref('users/' + loan.borrower + '/transactions').push(tx);
+  await logAudit('LOAN_APPROVED', `${user.username} approved ◆${fmtNum(loan.principal)} loan for ${loan.borrower}`);
+  toast(`Loan approved. ◆${fmtNum(loan.principal)} disbursed to ${loan.borrower}`, 'success');
+  navTo('loan-approvals');
+}
+
+async function denyLoan(id) {
+  if (!confirm('Deny this loan application?')) return;
+  await db.ref('loans/' + id).update({ status: 'denied', deniedAt: Date.now(), deniedBy: user.username });
+  await logAudit('LOAN_DENIED', `${user.username} denied loan ${id.slice(0,8)}`);
+  toast('Loan application denied.', 'info');
+  navTo('loan-approvals');
+}
+
+// ── ALL LOANS (Admin) ─────────────────────────────────────
+async function renderAllLoans(el) {
+  const snap = await db.ref('loans').once('value');
+  const loans = Object.entries(snap.val() || {}).map(([id, l]) => ({ id, ...l })).reverse();
+  const statuses = ['all', 'pending', 'active', 'paid', 'denied'];
+  el.innerHTML = `<div class="fade-up">
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      ${statuses.map(s => `<button class="btn btn-ghost btn-sm" onclick="filterAllLoans(this,'${s}')" data-filter="${s}">${s.toUpperCase()} ${s==='all'?`(${loans.length})`:`(${loans.filter(l=>l.status===s).length})`}</button>`).join('')}
+    </div>
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">All Loans</h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>ID</th><th>Borrower</th><th>Principal</th><th>Rate</th><th>Total</th><th>Remaining</th><th>Progress</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody id="all-loans-tbody">${loans.map(l => {
+          const pct = l.totalDue > 0 ? Math.min(100, ((l.totalDue - (l.remaining || l.totalDue)) / l.totalDue) * 100) : 0;
+          return `<tr data-status="${l.status}">
+            <td class="mono" style="font-size:11px;color:var(--text-40);">${l.id.slice(0,8).toUpperCase()}</td>
+            <td><strong>${esc(l.borrower)}</strong></td>
+            <td class="mono">◆${fmtNum(l.principal)}</td>
+            <td class="mono">${l.interestRate}%</td>
+            <td class="mono">◆${fmtNum(l.totalDue)}</td>
+            <td class="mono">◆${fmtNum(l.remaining||l.totalDue)}</td>
+            <td><div style="width:80px;"><div class="progress-track"><div class="progress-fill gold" style="width:${pct}%"></div></div><div style="font-size:10px;color:var(--text-40);margin-top:3px;font-family:'JetBrains Mono',monospace;">${Math.round(pct)}%</div></div></td>
+            <td>${loanBadge(l.status)}</td>
+            <td style="font-size:11px;color:var(--text-40);">${fmtDate(l.createdAt)}</td>
+            <td><div style="display:flex;gap:4px;">
+              ${l.status === 'active' ? `<button class="btn btn-ghost btn-xs" onclick="openPaymentModal('${l.id}')">Pay</button>` : ''}
+              ${l.status === 'active' ? `<button class="btn btn-success btn-xs" onclick="markLoanPaid('${l.id}')">Paid</button>` : ''}
+              <button class="btn btn-danger btn-xs" onclick="deleteLoan('${l.id}')">Del</button>
+            </div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function filterAllLoans(btn, status) {
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('btn-gold'));
+  btn.classList.add('btn-gold');
+  document.querySelectorAll('#all-loans-tbody tr').forEach(tr => {
+    tr.style.display = (status === 'all' || tr.dataset.status === status) ? '' : 'none';
+  });
+}
+
+async function markLoanPaid(id) {
+  if (!confirm('Mark this entire loan as fully paid?')) return;
+  const snap = await db.ref('loans/' + id).once('value');
+  const loan = snap.val();
+  await db.ref('loans/' + id).update({ status: 'paid', remaining: 0, paidAt: Date.now() });
+  await logAudit('LOAN_PAID', `Loan ${id.slice(0,8)} for ${loan.borrower} marked as paid`);
+  toast('Loan marked as fully paid.', 'success');
+  navTo('all-loans');
+}
+
+async function deleteLoan(id) {
+  if (!confirm('Permanently delete this loan record?')) return;
+  await db.ref('loans/' + id).remove();
+  toast('Loan deleted.', 'info');
+  navTo('all-loans');
+}
+
+// ── REPAYMENT TRACKER ─────────────────────────────────────
+async function renderRepayments(el) {
+  const snap = await db.ref('loans').orderByChild('status').equalTo('active').once('value');
+  const loans = Object.entries(snap.val() || {}).map(([id, l]) => ({ id, ...l }));
+  if (!loans.length) {
+    el.innerHTML = `<div class="fade-up box"><div class="empty-state">${refreshIcon()}<h3>No active loans</h3><p>All loans are settled or pending.</p></div></div>`; return;
+  }
+  el.innerHTML = `<div class="fade-up">${loans.map(l => {
+    const pct = l.totalDue > 0 ? Math.min(100, ((l.totalDue - (l.remaining || l.totalDue)) / l.totalDue) * 100) : 0;
+    const schedule = l.schedule || Array.from({ length: l.installments || 1 }, (_, i) => ({ installment: i + 1, amount: l.totalDue / (l.installments || 1), paid: i < (l.paidInstallments || 0) }));
+    return `<div class="box" style="margin-bottom:20px;">
+      <div class="box-head">
+        <div>
+          <h3 class="box-title">${esc(l.borrower)}</h3>
+          <div style="font-size:12px;color:var(--text-40);font-family:'JetBrains Mono',monospace;">◆${fmtNum(l.principal)} loan · ${l.id.slice(0,8).toUpperCase()}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--gold);">◆${fmtNum(l.remaining || l.totalDue)} remaining</div>
+            <div style="font-size:11px;color:var(--text-40);">${Math.round(pct)}% repaid</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="openPaymentModal('${l.id}')">Record Payment</button>
+        </div>
+      </div>
+      <div class="progress-track" style="margin-bottom:20px;"><div class="progress-fill gold" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-40);margin-bottom:12px;font-family:'JetBrains Mono',monospace;">Installment Schedule</div>
+      ${schedule.map((s, i) => `<div class="repay-row ${s.paid ? 'paid' : ''}">
+        <span class="repay-num">#${i + 1}</span>
+        <span class="mono" style="font-size:13px;">◆${fmtNum(s.amount)}</span>
+        <span style="font-size:12px;color:var(--text-40);">${s.dueDate || '—'}</span>
+        <span style="font-size:12px;">${s.paidDate ? fmtDate(s.paidDate) : '—'}</span>
+        ${s.paid ? `<span class="badge badge-green">Paid</span>` : `<span class="badge badge-gray">Pending</span>`}
+      </div>`).join('')}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function openPaymentModal(loanId) {
+  const snap = await db.ref('loans/' + loanId).once('value');
+  _payLoan = snap.val();
+  _payLoanId = loanId;
+  document.getElementById('payment-loan-line').textContent = `${_payLoan.borrower} — ◆${fmtNum(_payLoan.principal)} loan`;
+  const schedule = _payLoan.schedule || [];
+  document.getElementById('repayment-schedule').innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:4px;">
+      <div class="info-row"><span class="info-key">Total Due</span><span class="info-val">◆${fmtNum(_payLoan.totalDue)}</span></div>
+      <div class="info-row"><span class="info-key">Remaining</span><span class="info-val" style="color:var(--red);">◆${fmtNum(_payLoan.remaining||_payLoan.totalDue)}</span></div>
+      <div class="info-row"><span class="info-key">Paid Installments</span><span class="info-val">${_payLoan.paidInstallments||0}/${_payLoan.installments||1}</span></div>
+    </div>`;
+  if (schedule.length) document.getElementById('pay-amount').value = (_payLoan.totalDue / (schedule.length || 1)).toFixed(2);
+  openModal('modal-payment');
+}
+
+async function recordPayment() {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount.', 'error'); return; }
+  const note = document.getElementById('pay-note').value;
+  const newRemaining = Math.max(0, (_payLoan.remaining || _payLoan.totalDue) - amount);
+  const newPaid = (_payLoan.paidInstallments || 0) + 1;
+  const newStatus = newRemaining <= 0 ? 'paid' : 'active';
+  const tx = { description: `Loan repayment — ${note || 'installment'}`, amount, type: 'debit', date: new Date().toISOString() };
+  await db.ref('loans/' + _payLoanId).update({ remaining: newRemaining, paidInstallments: newPaid, status: newStatus, lastPayment: Date.now() });
+  await db.ref('users/' + _payLoan.borrower + '/transactions').push(tx);
+  // Deduct from balance
+  const uSnap = await db.ref('users/' + _payLoan.borrower + '/balance').once('value');
+  const bal = uSnap.val() || 0;
+  await db.ref('users/' + _payLoan.borrower + '/balance').set(Math.max(0, bal - amount));
+  await logAudit('PAYMENT_RECORDED', `◆${fmtNum(amount)} payment recorded for ${_payLoan.borrower}'s loan`);
+  toast(`Payment of ◆${fmtNum(amount)} recorded. Remaining: ◆${fmtNum(newRemaining)}`, 'success');
+  closeModal('modal-payment');
+  navTo('repayments');
+}
+
+// ── ACCOUNTS (Admin) ──────────────────────────────────────
+async function renderAccounts(el) {
+  const snap = await db.ref('users').once('value');
+  const users = Object.entries(snap.val() || {}).map(([k, v]) => ({ username: k, ...v }));
+  el.innerHTML = `<div class="fade-up">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <input class="inp" id="acct-search" style="max-width:280px;" placeholder="Search accounts..." oninput="filterAccounts(this.value)">
+    </div>
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">All Accounts <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-40);">${users.length}</span></h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Username</th><th>Account No.</th><th>Balance</th><th>Credit Score</th><th>Card</th><th>Card Status</th><th>Actions</th></tr></thead>
+        <tbody id="accounts-tbody">${users.map(u => `<tr data-username="${u.username.toLowerCase()}">
+          <td><strong>${esc(u.username)}</strong></td>
+          <td class="mono" style="font-size:11px;">${esc(u.accountNumber||'—')}</td>
+          <td class="mono" style="color:var(--gold);">◆${fmtNum(u.balance||0)}</td>
+          <td class="mono">${u.creditScore||'—'}</td>
+          <td class="mono" style="font-size:12px;">${u.cardNumber ? '•••• ' + String(u.cardNumber).replace(/\s/g,'').slice(-4) : '—'}</td>
+          <td>${u.cardFrozen||u.frozen ? '<span class="badge badge-red">Frozen</span>' : u.cardNumber ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">No Card</span>'}</td>
+          <td><div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs" onclick="openBalanceModal('${u.username}',${u.balance||0})">Balance</button>
+            ${u.cardNumber ? `<button class="btn btn-xs ${u.cardFrozen||u.frozen?'btn-success':'btn-danger'}" onclick="toggleFreeze('${u.username}',${!!(u.cardFrozen||u.frozen)})">${u.cardFrozen||u.frozen?'Unfreeze':'Freeze'}</button>` : ''}
+            <button class="btn btn-ghost btn-xs" onclick="editCreditScore('${u.username}',${u.creditScore||500})">Score</button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function filterAccounts(q) {
+  document.querySelectorAll('#accounts-tbody tr').forEach(tr => {
+    tr.style.display = tr.dataset.username.includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function openBalanceModal(uname, currentBal) {
+  _balUser = uname;
+  document.getElementById('balance-modal-user').textContent = `${uname} — Current: ◆${fmtNum(currentBal)}`;
+  document.getElementById('bal-amount').value = '';
+  document.getElementById('bal-note').value = '';
+  openModal('modal-balance');
+}
+
+async function applyBalanceEdit() {
+  const op = document.getElementById('bal-op').value;
+  const amount = parseFloat(document.getElementById('bal-amount').value);
+  const note = document.getElementById('bal-note').value || 'Admin adjustment';
+  if (isNaN(amount)) { toast('Enter a valid amount.', 'error'); return; }
+  const snap = await db.ref('users/' + _balUser + '/balance').once('value');
+  const cur = snap.val() || 0;
+  let newBal;
+  if (op === 'set') newBal = amount;
+  else if (op === 'add') newBal = cur + amount;
+  else newBal = Math.max(0, cur - amount);
+  const tx = { description: note, amount: Math.abs(newBal - cur), type: newBal > cur ? 'credit' : 'debit', date: new Date().toISOString() };
+  await db.ref('users/' + _balUser + '/balance').set(newBal);
+  await db.ref('users/' + _balUser + '/transactions').push(tx);
+  await logAudit('BALANCE_EDIT', `${user.username} set ${_balUser} balance to ◆${fmtNum(newBal)}`);
+  toast(`Balance updated: ◆${fmtNum(newBal)}`, 'success');
+  closeModal('modal-balance');
+  navTo('accounts');
+}
+
+async function toggleFreeze(uname, isFrozen) {
+  await db.ref('users/' + uname).update({ cardFrozen: !isFrozen, frozen: !isFrozen });
+  await logAudit(isFrozen ? 'CARD_UNFROZEN' : 'CARD_FROZEN', `${user.username} ${isFrozen ? 'unfroze' : 'froze'} ${uname}'s card`);
+  toast(`Card ${isFrozen ? 'unfrozen' : 'frozen'} for ${uname}`, 'info');
+  navTo('accounts');
+}
+
+async function editCreditScore(uname, current) {
+  const val = prompt(`Credit score for ${uname} (current: ${current}):`, current);
+  if (val === null) return;
+  const score = parseInt(val);
+  if (isNaN(score) || score < 1 || score > 1000) { toast('Invalid score (1–1000)', 'error'); return; }
+  await db.ref('users/' + uname + '/creditScore').set(score);
+  await logAudit('CREDIT_SCORE_EDIT', `${user.username} set ${uname} credit score to ${score}`);
+  toast(`Credit score updated to ${score}`, 'success');
+  navTo('accounts');
+}
+
+// ── CARD MANAGEMENT (Admin) ───────────────────────────────
+async function renderCardMgmt(el) {
+  const [cardsSnap, usersSnap] = await Promise.all([db.ref('cards').once('value'), db.ref('users').once('value')]);
+  const cards = Object.entries(cardsSnap.val() || {}).map(([id, c]) => ({ id, ...c }));
+  const users = Object.entries(usersSnap.val() || {}).filter(([, u]) => u.cardNumber).map(([k, u]) => ({ username: k, ...u }));
+  el.innerHTML = `<div class="fade-up">
+    <div class="box" style="margin-bottom:20px;">
+      <div class="box-head"><h3 class="box-title">Card Management</h3><button class="btn btn-gold" onclick="openModal('modal-create-card')">${plusIcon()} Issue Card</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Username</th><th>Card Number</th><th>Type</th><th>Limit</th><th>Expiry</th><th>Status</th><th>Setup</th><th>Actions</th></tr></thead>
+        <tbody>${cards.length ? cards.map(c => `<tr>
+          <td><strong>${esc(c.username)}</strong></td>
+          <td class="mono" style="font-size:12px;">${esc(c.cardNumber||'—')}</td>
+          <td>${c.cardType === 'credit' ? `<span class="badge badge-purple">Credit</span>` : `<span class="badge badge-blue">Debit</span>`}</td>
+          <td class="mono">◆${fmtNum(c.creditLimit||0)}</td>
+          <td class="mono">${esc(c.expiry||'—')}</td>
+          <td>${c.status==='active'||c.status==='pending_setup' ? `<span class="badge badge-green">Active</span>` : `<span class="badge badge-gray">${esc(c.status||'—')}</span>`}</td>
+          <td>${c.setupTokenUsed ? `<span style="color:var(--text-40);font-size:12px;">Used</span>` : `<button class="btn btn-ghost btn-xs" onclick="copySetupLink('${c.setupToken}')">Copy Link</button>`}</td>
+          <td><div style="display:flex;gap:5px;">
+            <button class="btn btn-ghost btn-xs" onclick="viewCardInModal('${esc(c.username)}','${esc(c.cardNumber||'')}','${esc(c.expiry||'')}','${c.cvv||''}')">View</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteCard('${c.id}')">Del</button>
+          </div></td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="empty-state" style="padding:32px;">${cardIcon()}<p>No cards issued yet.</p></div></td></tr>`}</tbody>
+      </table></div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">User Card Status</h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Username</th><th>Card Number</th><th>Type</th><th>Expiry</th><th>Frozen</th><th>Actions</th></tr></thead>
+        <tbody>${users.length ? users.map(u => `<tr>
+          <td><strong>${esc(u.username)}</strong></td>
+          <td class="mono" style="font-size:12px;">•••• •••• •••• ${String(u.cardNumber||'').replace(/\s/g,'').slice(-4)}</td>
+          <td>${esc(u.cardType||'—')}</td>
+          <td class="mono">${esc(u.expiry||u.cardExpiry||'—')}</td>
+          <td>${u.cardFrozen||u.frozen ? `<span class="badge badge-red">Frozen</span>` : `<span class="badge badge-green">Active</span>`}</td>
+          <td><button class="btn btn-xs ${u.cardFrozen||u.frozen?'btn-success':'btn-danger'}" onclick="toggleFreeze('${u.username}',${!!(u.cardFrozen||u.frozen)})">${u.cardFrozen||u.frozen?'Unfreeze':'Freeze'}</button></td>
+        </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:24px;">${cardIcon()}<p>No cards on accounts.</p></div></td></tr>`}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+async function createCard() {
+  const username = document.getElementById('cc-username').value.trim();
+  const type = document.getElementById('cc-type').value;
+  const limit = parseFloat(document.getElementById('cc-limit').value) || 5000;
+  const expiryInput = document.getElementById('cc-expiry').value.trim();
+  if (!username) { toast('Enter a username.', 'error'); return; }
+  const cardNum = Array.from({length:4}, () => Math.floor(1000+Math.random()*9000)).join(' ');
+  const cvv = Math.floor(100+Math.random()*900).toString();
+  const expiry = expiryInput || `12/${(new Date().getFullYear()+3).toString().slice(-2)}`;
+  const token = Array.from({length:32}, () => Math.floor(Math.random()*16).toString(16)).join('');
+  await db.ref('cards').push({ username, cardNumber: cardNum, cvv, expiry, cardType: type, creditLimit: limit, status: 'active', setupToken: token, setupTokenUsed: false, createdAt: Date.now() });
+  await db.ref('users/' + username).update({ cardNumber: cardNum, cvv, expiry, cardType: type, creditLimit: limit, cardStatus: 'active', cardFrozen: false });
+  await logAudit('CARD_CREATED', `${user.username} issued ${type} card to ${username}`);
+  const link = `${location.origin}/pin-setup.html?token=${token}`;
+  navigator.clipboard.writeText(link).catch(() => {});
+  toast(`Card issued to ${username}. Setup link copied!`, 'success');
+  closeModal('modal-create-card');
+  navTo('card-mgmt');
+}
+
+function viewCardInModal(username, cardNum, expiry, cvv) {
+  document.getElementById('card-modal-title').textContent = `${username}'s Card`;
+  document.getElementById('card-cvv-num').textContent = cvv || '•••';
+  document.getElementById('card-front').innerHTML = buildCardSVG(username, cardNum, expiry, false);
+  document.getElementById('card-modal-details').innerHTML = '';
+  openModal('modal-card');
+}
+
+function copySetupLink(token) {
+  const link = `${location.origin}/pin-setup.html?token=${token}`;
+  navigator.clipboard.writeText(link).then(() => toast('Setup link copied!', 'success')).catch(() => toast('Copy failed — manual: ' + link, 'error'));
+}
+
+async function deleteCard(id) {
+  if (!confirm('Delete this card permanently?')) return;
+  await db.ref('cards/' + id).remove();
+  toast('Card deleted.', 'info');
+  navTo('card-mgmt');
+}
+
+// ── COLLATERAL ────────────────────────────────────────────
+async function renderCollateral(el) {
+  const snap = await db.ref('collateral').once('value');
+  const items = Object.entries(snap.val() || {}).map(([id, c]) => ({ id, ...c })).reverse();
+  el.innerHTML = `<div class="fade-up">
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">Collateral Vault <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-40);">${items.length} items</span></h3>
+        <button class="btn btn-gold" onclick="openModal('modal-collateral')">${plusIcon()} Log Item</button>
+      </div>
+      ${items.length ? `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Borrower</th><th>Item</th><th>Value</th><th>Linked Loan</th><th>Status</th><th>Logged</th><th>Actions</th></tr></thead>
+        <tbody>${items.map(c => `<tr>
+          <td><strong>${esc(c.borrower||'—')}</strong></td>
+          <td>${esc(c.item||'—')}</td>
+          <td class="mono">◆${fmtNum(c.value||0)}</td>
+          <td class="mono" style="font-size:11px;">${esc(c.loanId||'—')}</td>
+          <td><span class="badge ${c.status==='held'?'badge-gold':c.status==='returned'?'badge-green':'badge-gray'}">${esc(c.status||'held')}</span></td>
+          <td style="font-size:11px;color:var(--text-40);">${fmtDate(c.createdAt)}</td>
+          <td><div style="display:flex;gap:5px;">
+            <button class="btn btn-success btn-xs" onclick="returnCollateral('${c.id}')">Return</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteCollateral('${c.id}')">Del</button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : `<div class="empty-state">${lockIcon()}<h3>Vault is empty</h3><p>No collateral items logged yet.</p></div>`}
+    </div>
+  </div>`;
+}
+
+async function saveCollateral() {
+  const borrower = document.getElementById('col-user').value.trim();
+  const item = document.getElementById('col-item').value.trim();
+  const value = parseFloat(document.getElementById('col-value').value) || 0;
+  const loanId = document.getElementById('col-loan').value.trim();
+  const notes = document.getElementById('col-notes').value.trim();
+  if (!borrower || !item) { toast('Enter borrower and item.', 'error'); return; }
+  await db.ref('collateral').push({ borrower, item, value, loanId, notes, status: 'held', loggedBy: user.username, createdAt: Date.now() });
+  await logAudit('COLLATERAL_LOGGED', `${user.username} logged collateral: ${item} for ${borrower}`);
+  toast('Collateral logged.', 'success');
+  closeModal('modal-collateral');
+  navTo('collateral');
+}
+
+async function returnCollateral(id) {
+  if (!confirm('Mark this item as returned?')) return;
+  await db.ref('collateral/' + id).update({ status: 'returned', returnedAt: Date.now() });
+  toast('Item marked as returned.', 'success');
+  navTo('collateral');
+}
+
+async function deleteCollateral(id) {
+  if (!confirm('Remove this collateral record?')) return;
+  await db.ref('collateral/' + id).remove();
+  toast('Record deleted.', 'info');
+  navTo('collateral');
+}
+
+// ── ANALYTICS (Admin) ─────────────────────────────────────
+async function renderAnalytics(el) {
+  const [usersSnap, loansSnap] = await Promise.all([db.ref('users').once('value'), db.ref('loans').once('value')]);
+  const users = Object.values(usersSnap.val() || {});
+  const loans = Object.values(loansSnap.val() || {});
+  const totalBal = users.reduce((s, u) => s + (u.balance || 0), 0);
+  const activeLoans = loans.filter(l => l.status === 'active');
+  const paidLoans = loans.filter(l => l.status === 'paid');
+  const pendingLoans = loans.filter(l => l.status === 'pending');
+  const deniedLoans = loans.filter(l => l.status === 'denied');
+  const totalExposure = activeLoans.reduce((s, l) => s + (l.remaining || 0), 0);
+  const totalDisbursed = loans.filter(l => l.status !== 'pending' && l.status !== 'denied').reduce((s, l) => s + (l.principal || 0), 0);
+  const totalInterest = paidLoans.reduce((s, l) => s + (l.interestAmount || 0), 0);
+  const defaultRate = loans.length > 0 ? (deniedLoans.length / loans.length * 100).toFixed(1) : 0;
+  const avgLoan = loans.length > 0 ? loans.reduce((s, l) => s + (l.principal || 0), 0) / loans.length : 0;
+
+  // Purpose breakdown
+  const purposes = {};
+  loans.forEach(l => { purposes[l.purpose || 'unknown'] = (purposes[l.purpose || 'unknown'] || 0) + 1; });
+
+  el.innerHTML = `<div class="fade-up">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-card-bar gold"></div><div class="stat-top"><div class="stat-icon gold">${usersIcon()}</div></div><div class="stat-label">Total Accounts</div><div class="stat-value">${users.length}</div></div>
+      <div class="stat-card"><div class="stat-card-bar green"></div><div class="stat-top"><div class="stat-icon green">${coinIcon()}</div></div><div class="stat-label">Total Deposits</div><div class="stat-value" style="font-size:20px;">◆${fmtNum(totalBal)}</div></div>
+      <div class="stat-card"><div class="stat-card-bar blue"></div><div class="stat-top"><div class="stat-icon blue">${fileIcon()}</div></div><div class="stat-label">Total Loans</div><div class="stat-value">${loans.length}</div></div>
+      <div class="stat-card"><div class="stat-card-bar red"></div><div class="stat-top"><div class="stat-icon red">${coinIcon()}</div></div><div class="stat-label">Loan Exposure</div><div class="stat-value" style="font-size:20px;">◆${fmtNum(totalExposure)}</div></div>
+    </div>
+
+    <div class="three-col" style="margin-bottom:20px;">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Loan Portfolio</h3></div>
+        ${[['Active', activeLoans.length, 'badge-blue'], ['Paid', paidLoans.length, 'badge-green'], ['Pending', pendingLoans.length, 'badge-gold'], ['Denied', deniedLoans.length, 'badge-red']].map(([l, v, cls]) => `
+          <div class="info-row">
+            <span class="info-key"><span class="badge ${cls}" style="margin-right:8px;">${l}</span></span>
+            <span class="info-val">${v} loans</span>
+          </div>`).join('')}
+      </div>
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Financial Summary</h3></div>
+        <div class="info-row"><span class="info-key">Total Disbursed</span><span class="info-val">◆${fmtNum(totalDisbursed)}</span></div>
+        <div class="info-row"><span class="info-key">Interest Earned</span><span class="info-val" style="color:var(--em-lt);">◆${fmtNum(totalInterest)}</span></div>
+        <div class="info-row"><span class="info-key">Avg Loan Size</span><span class="info-val">◆${fmtNum(avgLoan)}</span></div>
+        <div class="info-row"><span class="info-key">Default Rate</span><span class="info-val" style="color:${parseFloat(defaultRate)>20?'var(--red)':'var(--em-lt)'};">${defaultRate}%</span></div>
+      </div>
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Loan Purposes</h3></div>
+        ${Object.entries(purposes).map(([p, count]) => `
+          <div class="risk-bar-row" style="margin-bottom:8px;">
+            <span class="risk-bar-label" style="min-width:100px;">${p}</span>
+            <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${loans.length > 0 ? (count/loans.length)*100 : 0}%;background:var(--gold);"></div></div>
+            <span class="risk-bar-score" style="color:var(--gold-lt);">${count}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">Top Borrowers</h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>User</th><th>Total Borrowed</th><th>Outstanding</th><th>Paid Off</th><th>Loans</th></tr></thead>
+        <tbody>${Object.entries(users.reduce((acc, u) => {
+          const uloans = loans.filter(l => l.borrower === u.username);
+          if (!uloans.length) return acc;
+          acc[u.username] = { total: uloans.reduce((s, l) => s + (l.principal || 0), 0), outstanding: uloans.filter(l => l.status==='active').reduce((s, l) => s + (l.remaining||0), 0), paid: uloans.filter(l=>l.status==='paid').length, count: uloans.length };
+          return acc;
+        }, {})).sort(([,a],[,b]) => b.total - a.total).slice(0,8).map(([uname, s]) => `<tr>
+          <td><strong>${esc(uname)}</strong></td>
+          <td class="mono">◆${fmtNum(s.total)}</td>
+          <td class="mono" style="color:var(--red);">◆${fmtNum(s.outstanding)}</td>
+          <td class="mono" style="color:var(--em-lt);">${s.paid} loans</td>
+          <td class="mono">${s.count}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+// ── CREDIT SCORES ─────────────────────────────────────────
+async function renderCreditScores(el) {
+  const usersSnap = await db.ref('users').once('value');
+  const loansSnap = await db.ref('loans').once('value');
+  const users = Object.entries(usersSnap.val() || {}).map(([k, v]) => ({ username: k, ...v }));
+  const loans = Object.values(loansSnap.val() || {});
+
+  // Sort highest score first
+  users.sort((a, b) => (b.creditScore || 0) - (a.creditScore || 0));
+
+  el.innerHTML = `<div class="fade-up">
+    <div class="box" style="margin-bottom:20px;">
+      <div class="box-head">
+        <h3 class="box-title">Credit Score Registry <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-40);">(1–1000 scale)</span></h3>
+        <button class="btn btn-ghost btn-sm" onclick="autoCalcScores()">⟳ Auto-Calculate All</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th>#</th><th>Username</th><th>Score</th><th>Tier</th>
+          <th>Max Eligible Loan</th><th>Loans</th><th>Defaults</th><th>Paid</th><th>Balance</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${users.map((u, i) => {
+          const uLoans = loans.filter(l => l.borrower === u.username);
+          const defaults = uLoans.filter(l => l.status === 'denied').length;
+          const paid = uLoans.filter(l => l.status === 'paid').length;
+          const score = u.creditScore || 0;
+          const tier = creditTier(score);
+          const maxLoan = maxEligibleLoan(score, u.balance || 0);
+          const maxLoanStr = maxLoan <= 0 ? '<span style="color:var(--red)">Not Eligible</span>' : `◆${fmtNum(maxLoan)}`;
+          const rankColor = i === 0 ? 'var(--gold)' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--text-40)';
+          const barWidth = Math.round((score / 1000) * 100);
+          return `<tr>
+            <td style="color:${rankColor};font-weight:700;font-family:'JetBrains Mono',monospace;">${i + 1}</td>
+            <td><strong>${esc(u.username)}</strong></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:50px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+                  <div style="width:${barWidth}%;height:100%;background:${score>=751?'var(--em-lt)':score>=501?'var(--gold)':score>=351?'var(--amber)':'var(--red)'};border-radius:3px;"></div>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${score>=751?'var(--em-lt)':score>=651?'var(--blue)':score>=501?'var(--gold)':score>=351?'var(--amber)':'var(--red)'};">${score || '—'}</span>
+              </div>
+            </td>
+            <td><span class="badge ${tier.cls}">${tier.label}</span></td>
+            <td class="mono">${maxLoanStr}</td>
+            <td class="mono">${uLoans.length}</td>
+            <td class="mono" style="color:${defaults > 0 ? 'var(--red)' : 'inherit'};">${defaults}</td>
+            <td class="mono" style="color:${paid > 0 ? 'var(--em-lt)' : 'inherit'};">${paid}</td>
+            <td class="mono">◆${fmtNum(u.balance || 0)}</td>
+            <td>
+              <div style="display:flex;gap:4px;">
+                <button class="btn btn-ghost btn-xs" onclick="editCreditScore('${u.username}',${u.creditScore || 500})">Edit</button>
+                <button class="btn btn-ghost btn-xs" onclick="calcScoreForUser('${u.username}').then(s=>{ toast('${u.username}: ' + s + '/1000','success'); navTo('credit-scores'); })">Auto</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h3 class="box-title">Credit Score Tier Reference</h3></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Score Range</th><th>Tier</th><th>Max Cap</th><th>Balance Multiplier</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">951–1000</td><td><span class="badge badge-gold">Elite</span></td>       <td class="mono">No cap</td>    <td class="mono">10×</td><td style="color:var(--text-40);">Exceptional history, maximum access</td></tr>
+          <tr><td class="mono">851–950</td><td><span class="badge badge-green">Excellent</span></td>   <td class="mono">◆50,000</td>  <td class="mono">6×</td> <td style="color:var(--text-40);">Strong track record</td></tr>
+          <tr><td class="mono">751–850</td><td><span class="badge badge-blue">Very Good</span></td>    <td class="mono">◆20,000</td>  <td class="mono">4×</td> <td style="color:var(--text-40);">Reliable borrower</td></tr>
+          <tr><td class="mono">651–750</td><td><span class="badge badge-gold">Good</span></td>         <td class="mono">◆10,000</td>  <td class="mono">3×</td> <td style="color:var(--text-40);">Generally creditworthy</td></tr>
+          <tr><td class="mono">501–650</td><td><span class="badge badge-gold">Fair</span></td>         <td class="mono">◆5,000</td>   <td class="mono">2×</td> <td style="color:var(--text-40);">Some risk, limited access</td></tr>
+          <tr><td class="mono">351–500</td><td><span class="badge badge-red">Poor</span></td>          <td class="mono">◆2,000</td>   <td class="mono">1×</td> <td style="color:var(--text-40);">High risk, small loans only</td></tr>
+          <tr><td class="mono">201–350</td><td><span class="badge badge-red">Very Poor</span></td>     <td class="mono">◆500</td>     <td class="mono">0.5×</td><td style="color:var(--text-40);">Severely limited access</td></tr>
+          <tr><td class="mono">1–200</td>  <td><span class="badge badge-red">Defaulted</span></td>     <td colspan="3" style="color:var(--red);">Cannot apply — rebuild score by repaying debts</td></tr>
+        </tbody>
+      </table></div>
+      <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-40);">
+        <strong style="color:var(--gold-lt);">How scores are calculated:</strong>
+        Starting at 500 · +60 per repaid loan · −120 per default · −15 per active loan ·
+        Balance bonuses: +40 (◆500+), +60 (◆2k+), +80 (◆5k+), +120 (◆10k+) · Range: 1–1000
+      </div>
+    </div>
+  </div>`;
+}
+
+async function calcScoreForUser(uname) {
+  const loansSnap = await db.ref('loans').orderByChild('borrower').equalTo(uname).once('value');
+  const uLoans = Object.values(loansSnap.val() || {});
+  const userSnap = await db.ref('users/' + uname).once('value');
+  const u = userSnap.val() || {};
+  const paid = uLoans.filter(l => l.status === 'paid').length;
+  const defaults = uLoans.filter(l => l.status === 'denied').length;
+  const active = uLoans.filter(l => l.status === 'active').length;
+  let score = 500; // start at Fair
+  score += paid * 60;       // each repaid loan: +60
+  score -= defaults * 120;  // each default: -120
+  score -= active * 15;     // each active loan is slight risk: -15
+  const bal = u.balance || 0;
+  if (bal >= 500)   score += 40;
+  if (bal >= 2000)  score += 60;
+  if (bal >= 5000)  score += 80;
+  if (bal >= 10000) score += 120;
+  score = Math.max(1, Math.min(1000, score));
+  await db.ref('users/' + uname + '/creditScore').set(score);
+  return score;
+}
+
+async function autoCalcScores() {
+  const snap = await db.ref('users').once('value');
+  const usernames = Object.keys(snap.val() || {});
+  for (const uname of usernames) await calcScoreForUser(uname);
+  toast(`Credit scores recalculated for ${usernames.length} accounts.`, 'success');
+  navTo('credit-scores');
+}
+
+// ── Credit Score Tier System (1–1000) ────────────────────────────────
+function creditTier(score) {
+  if (score >= 951) return { label: 'Elite',     color: 'badge-gold',   cls: 'badge-gold' };
+  if (score >= 851) return { label: 'Excellent',  color: 'badge-green',  cls: 'badge-green' };
+  if (score >= 751) return { label: 'Very Good',  color: 'badge-blue',   cls: 'badge-blue' };
+  if (score >= 651) return { label: 'Good',       color: 'badge-gold',   cls: 'badge-gold' };
+  if (score >= 501) return { label: 'Fair',       color: 'badge-gold',   cls: 'badge-gold' };
+  if (score >= 351) return { label: 'Poor',       color: 'badge-red',    cls: 'badge-red' };
+  if (score >= 201) return { label: 'Very Poor',  color: 'badge-red',    cls: 'badge-red' };
+  return               { label: 'Defaulted',  color: 'badge-red',    cls: 'badge-red' };
+}
+
+function maxEligibleLoan(score, balance) {
+  if (score < 201) return 0;
+  if (score < 351) return Math.min(500,   balance * 0.5);
+  if (score < 501) return Math.min(2000,  balance * 1.0);
+  if (score < 651) return Math.min(5000,  balance * 2.0);
+  if (score < 751) return Math.min(10000, balance * 3.0);
+  if (score < 851) return Math.min(20000, balance * 4.0);
+  if (score < 951) return Math.min(50000, balance * 6.0);
+  return balance * 10; // Elite — no hard cap
+}
+
+function eligibilityHtml(score, balance, requestedAmount) {
+  const max = maxEligibleLoan(score, balance);
+  const tier = creditTier(score);
+  const eligible = max > 0 && (!requestedAmount || requestedAmount <= max);
+  const color = eligible ? 'var(--em-lt)' : 'var(--red)';
+  const bg = eligible ? 'var(--em-10)' : 'var(--red-10)';
+  const border = eligible ? 'var(--em-20)' : 'var(--red-20)';
+  return `
+    <div style="background:${bg};border:1px solid ${border};border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:11px;color:var(--text-40);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;font-family:'JetBrains Mono',monospace;">Credit Eligibility</div>
+          <div style="font-size:15px;font-weight:700;color:${color};">${eligible ? '✓ Eligible' : max <= 0 ? '✗ Not Eligible — Score Too Low' : `✗ Amount Exceeds Limit (max ◆${fmtNum(max)})`}</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="badge ${tier.cls}" style="margin-bottom:6px;display:block;">${tier.label} · ${score}/1000</span>
+          <div style="font-size:12px;color:var(--text-40);">Max Eligible: <strong style="color:${color};">${max <= 0 ? 'None' : '◆' + fmtNum(max)}</strong></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── BLACKLIST ─────────────────────────────────────────────
+async function renderBlacklist(el) {
+  const snap = await db.ref('blacklist').once('value');
+  const items = Object.entries(snap.val() || {}).map(([id, v]) => ({ id, ...v })).reverse();
+  el.innerHTML = `<div class="fade-up"><div class="box">
+    <div class="box-head"><h3 class="box-title">Blacklist <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red);">${items.length}</span></h3>
+      <button class="btn btn-danger" onclick="openModal('modal-blacklist')">${plusIcon()} Add User</button>
+    </div>
+    ${items.length ? `<div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Username</th><th>Reason</th><th>Added By</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>${items.map(b => `<tr>
+        <td><strong style="color:var(--red);">${esc(b.username)}</strong></td>
+        <td>${esc(b.reason||'—')}</td>
+        <td class="mono" style="font-size:12px;">${esc(b.addedBy||'—')}</td>
+        <td style="font-size:12px;color:var(--text-40);">${fmtDate(b.addedAt)}</td>
+        <td><button class="btn btn-ghost btn-xs" onclick="removeBlacklist('${b.id}')">Remove</button></td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty-state">${banIcon()}<h3>Blacklist is empty</h3><p>No users have been blacklisted.</p></div>`}
+  </div></div>`;
+}
+
+async function addBlacklist() {
+  const username = document.getElementById('bl-username').value.trim();
+  const reason = document.getElementById('bl-reason').value.trim();
+  if (!username) { toast('Enter a username.', 'error'); return; }
+  await db.ref('blacklist').push({ username, reason, addedBy: user.username, addedAt: Date.now() });
+  await logAudit('BLACKLIST_ADD', `${user.username} blacklisted ${username}: ${reason}`);
+  toast(`${username} added to blacklist.`, 'info');
+  closeModal('modal-blacklist');
+  navTo('blacklist');
+}
+
+async function removeBlacklist(id) {
+  if (!confirm('Remove this user from the blacklist?')) return;
+  await db.ref('blacklist/' + id).remove();
+  toast('User removed from blacklist.', 'success');
+  navTo('blacklist');
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────
+async function renderAuditLog(el) {
+  const snap = await db.ref('audit').limitToLast(100).once('value');
+  const logs = Object.entries(snap.val() || {}).map(([id, v]) => ({ id, ...v })).reverse();
+  const typeColors = { LOAN_APPROVED: 'badge-green', LOAN_DENIED: 'badge-red', LOAN_REQUEST: 'badge-blue', BALANCE_EDIT: 'badge-gold', CARD_CREATED: 'badge-purple', CARD_FROZEN: 'badge-red', CARD_UNFROZEN: 'badge-green', PAYMENT_RECORDED: 'badge-green', BLACKLIST_ADD: 'badge-red', CREDIT_SCORE_EDIT: 'badge-blue' };
+  el.innerHTML = `<div class="fade-up"><div class="box">
+    <div class="box-head"><h3 class="box-title">Audit Log <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-40);">Last 100 entries</span></h3></div>
+    ${logs.length ? `<div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Action</th><th>Description</th><th>Timestamp</th></tr></thead>
+      <tbody>${logs.map(l => `<tr>
+        <td><span class="badge ${typeColors[l.action]||'badge-gray'}" style="font-size:10px;">${esc(l.action||'—')}</span></td>
+        <td style="font-size:13px;">${esc(l.description||'—')}</td>
+        <td class="mono" style="font-size:11px;color:var(--text-40);">${fmtDate(l.timestamp)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty-state">${logIcon()}<h3>No audit entries yet</h3></div>`}
+  </div></div>`;
+}
+
+async function logAudit(action, description) {
+  try { await db.ref('audit').push({ action, description, timestamp: Date.now(), by: user?.username }); } catch (e) {}
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+function renderSettings(el) {
+  el.innerHTML = `<div class="fade-up">
+    <div class="two-col" style="align-items:start;">
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">Interest Rates</h3></div>
+        <div class="form-grid">
+          <div class="form-field"><label class="lbl">Credit Card Rate (%)</label><input class="inp" id="s-credit" type="number" step=".1" value="${settings.creditInterestRate}"></div>
+          <div class="form-field"><label class="lbl">Debit Card Rate (%)</label><input class="inp" id="s-debit" type="number" step=".1" value="${settings.debitInterestRate}"></div>
+        </div>
+        <div class="box-head" style="margin-top:20px;"><h3 class="box-title">Loan Limits</h3></div>
+        <div class="form-grid">
+          <div class="form-field"><label class="lbl">Min Loan (◆)</label><input class="inp" id="s-min" type="number" value="${settings.minLoanAmount}"></div>
+          <div class="form-field"><label class="lbl">Max Loan (◆)</label><input class="inp" id="s-max" type="number" value="${settings.maxLoanAmount}"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-gold" onclick="saveSettings()">Save Settings</button></div>
+      </div>
+      <div class="box">
+        <div class="box-head"><h3 class="box-title">System Info</h3></div>
+        <div class="info-row"><span class="info-key">Admin</span><span class="info-val">${esc(user.username)}</span></div>
+        <div class="info-row"><span class="info-key">Firebase Project</span><span class="info-val mono" style="font-size:11px;">pride-casi</span></div>
+        <div class="info-row"><span class="info-key">LendHub Version</span><span class="info-val mono">2.0</span></div>
+        <div class="info-row"><span class="info-key">Session Started</span><span class="info-val mono" style="font-size:11px;">${new Date().toLocaleTimeString()}</span></div>
+        <hr class="divider">
+        <div class="box-head" style="margin:0 0 10px;"><h3 class="box-title">Danger Zone</h3></div>
+        <button class="btn btn-danger" style="width:100%;justify-content:center;" onclick="if(confirm('Wipe ALL loan records?')) db.ref('loans').remove().then(()=>toast('All loans deleted.','info'))">Wipe All Loans</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function saveSettings() {
+  settings.creditInterestRate = parseFloat(document.getElementById('s-credit').value);
+  settings.debitInterestRate = parseFloat(document.getElementById('s-debit').value);
+  settings.minLoanAmount = parseFloat(document.getElementById('s-min').value);
+  settings.maxLoanAmount = parseFloat(document.getElementById('s-max').value);
+  await db.ref('settings').set(settings);
+  await logAudit('SETTINGS_UPDATED', `${user.username} updated system settings`);
+  toast('Settings saved.', 'success');
+}
+
+// ── CARD SVG ──────────────────────────────────────────────
+function buildCardSVG(name, num, expiry, frozen) {
+  const grad = frozen
+    ? `<linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a22"/><stop offset="100%" stop-color="#2a2a38"/></linearGradient>`
+    : `<linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a0a3e"/><stop offset="40%" stop-color="#4b1a80"/><stop offset="75%" stop-color="#a01060"/><stop offset="100%" stop-color="#e0305a"/></linearGradient>`;
+  return `<svg width="100%" height="100%" viewBox="0 0 450 283" xmlns="http://www.w3.org/2000/svg">
+    <defs>${grad}<linearGradient id="chip" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d4af37"/><stop offset="100%" stop-color="#a07828"/></linearGradient></defs>
+    <rect width="450" height="283" rx="20" fill="url(#cg)"/>
+    <rect width="450" height="283" rx="20" fill="rgba(255,255,255,.06)"/>
+    <circle cx="370" cy="50" r="180" fill="rgba(255,255,255,.04)"/>
+    <rect x="32" y="82" width="56" height="42" rx="6" fill="url(#chip)"/>
+    <line x1="32" y1="96" x2="88" y2="96" stroke="#00000020" stroke-width="1"/>
+    <line x1="32" y1="110" x2="88" y2="110" stroke="#00000020" stroke-width="1"/>
+    <line x1="60" y1="82" x2="60" y2="124" stroke="#00000020" stroke-width="1"/>
+    <text x="32" y="38" fill="rgba(255,255,255,.65)" font-family="Arial" font-size="11" letter-spacing="2" font-weight="500">CREDIT CARD</text>
+    <text x="418" y="38" fill="rgba(255,255,255,.85)" font-family="Georgia,serif" font-size="14" text-anchor="end" letter-spacing="1">UNITED BANK</text>
+    <text x="32" y="178" font-family="Courier New,monospace" font-size="21" letter-spacing="4" fill="rgba(255,255,255,.88)">${esc(num||'•••• •••• •••• ••••')}</text>
+    <text x="32" y="218" font-family="Arial" font-size="10" letter-spacing="2" fill="rgba(255,255,255,.5)" text-transform="uppercase">CARD HOLDER</text>
+    <text x="32" y="238" font-family="Courier New,monospace" font-size="14" letter-spacing="2" fill="rgba(255,255,255,.75)">${(name||'').toUpperCase()}</text>
+    <text x="32" y="262" fill="rgba(255,255,255,.4)" font-family="Arial" font-size="9" letter-spacing="1">VALID THRU</text>
+    <text x="90" y="262" font-family="Courier New,monospace" font-size="13" fill="rgba(255,255,255,.7)">${esc(expiry||'••/••')}</text>
+    ${frozen ? `<rect width="450" height="283" rx="20" fill="rgba(0,0,0,.4)"/><text x="225" y="150" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700" fill="rgba(255,255,255,.5)" letter-spacing="6">FROZEN</text>` : ''}
+  </svg>`;
+}
+
+// ── Logout ────────────────────────────────────────────────
+function logout() {
+  user = null; isAdmin = false;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('inp-username').value = '';
+  document.getElementById('inp-password').value = '';
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function fmtNum(n) { return Number(n||0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtDate(d) { if (!d) return '—'; try { return new Date(typeof d === 'number' ? d : d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return String(d); } }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function loanBadge(s) {
+  const map = { active: 'badge-green', pending: 'badge-gold', paid: 'badge-blue', denied: 'badge-red', approved: 'badge-green' };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s||'—'}</span>`;
+}
+
+// ── SVG Icons ─────────────────────────────────────────────
+const I = (d) => `<svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
+const gridIcon = () => I("M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z");
+const plusIcon = () => I("M12 4.5v15m7.5-7.5h-15");
+const fileIcon = () => I("M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z");
+const cardIcon = () => I("M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z");
+const calcIcon = () => I("M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25z");
+const shieldIcon = () => I("M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z");
+const checkIcon = () => I("M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
+const listIcon = () => I("M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z");
+const usersIcon = () => I("M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z");
+const lockIcon = () => I("M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z");
+const chartIcon = () => I("M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z");
+const starIcon = () => I("M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z");
+const banIcon = () => I("M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636");
+const logIcon = () => I("M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z");
+const refreshIcon = () => I("M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99");
+const coinIcon = () => I("M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
+const gearIcon = () => I("M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z");
+const minusIcon = () => I("M4.5 12h15");
+</script>
+</body>
+</html>
