@@ -598,7 +598,7 @@ const firebaseConfig = {
   appId: "1:693920764912:web:0f445a99925f059a368335"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+var db;try{db=firebase.database();}catch(e){console.error("Firebase db init failed",e);}
 
 let user = null, isAdmin = false;
 let settings = { creditInterestRate: 10, debitInterestRate: 15, minLoanAmount: 100, maxLoanAmount: 10000 };
